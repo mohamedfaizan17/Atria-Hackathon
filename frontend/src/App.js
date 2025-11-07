@@ -21,6 +21,8 @@ import Careers from './pages/Careers';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
+import ResumeBuilder from './pages/ResumeBuilder';
+import ResumeScore from './pages/ResumeScore';
 
 // Analytics Wrapper
 const AnalyticsWrapper = ({ children }) => {
@@ -45,6 +47,8 @@ function App() {
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/careers" element={<Careers />} />
+                  <Route path="/resume-builder" element={<ResumeBuilder />} />
+                  <Route path="/resume-score" element={<ResumeScore />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin/*" element={<AdminDashboard />} />

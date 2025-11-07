@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Sun, Moon, Sparkles } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import ThemeCustomizer from './ThemeCustomizer';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showThemeCustomizer, setShowThemeCustomizer] = useState(false);
   const location = useLocation();
-  const { theme, toggleTheme, aiMode, toggleAiMode } = useTheme();
+  const { theme, toggleTheme, aiMode } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
 
   const navLinks = [
@@ -24,15 +26,15 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="fixed w-full top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-md">
+    <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-xl sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 transition-all duration-300">
       <div className="container-custom">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex justify-between items-center py-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">M</span>
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 via-purple-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all duration-500 group-hover:rotate-12">
+              <span className="text-white font-bold text-2xl">M</span>
             </div>
-            <span className="text-xl font-bold gradient-text">Mastersolis</span>
+            <span className="text-2xl font-extrabold gradient-text group-hover:scale-105 transition-transform duration-300">Mastersolis</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -41,39 +43,50 @@ const Navbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`font-medium transition-colors ${
+                className={`relative font-semibold transition-all duration-300 group ${
                   isActive(link.path)
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
                 }`}
               >
                 {link.name}
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-primary-600 to-secondary-600 transition-all duration-300 ${
+                  isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'
+                }`}></span>
               </Link>
             ))}
           </div>
 
           {/* Right Side Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* AI Mode Toggle */}
-            <button
-              onClick={toggleAiMode}
-              className={`p-2 rounded-lg transition-all ${
+            {/* Theme Customizer Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowThemeCustomizer(true)}
+              className={`p-2 rounded-lg transition-all relative group ${
                 aiMode
-                  ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-lg'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
-              title={aiMode ? 'AI Mode ON' : 'AI Mode OFF'}
+              title="Theme Customizer"
             >
-              <Sparkles className="w-5 h-5" />
-            </button>
+              <Sparkles className={`w-5 h-5 ${aiMode ? 'animate-pulse' : ''}`} />
+              {aiMode && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
+              )}
+            </motion.button>
 
             {/* Theme Toggle */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
+            </motion.button>
 
             {/* Auth Buttons */}
             {isAuthenticated ? (
@@ -130,8 +143,14 @@ const Navbar = () => {
               ))}
               
               <div className="flex items-center space-x-2 px-4 py-2">
-                <button onClick={toggleAiMode} className="flex-1 btn-secondary">
-                  {aiMode ? 'AI Mode ON' : 'AI Mode OFF'}
+                <button 
+                  onClick={() => { setShowThemeCustomizer(true); setIsOpen(false); }} 
+                  className={`flex-1 flex items-center justify-center space-x-2 ${
+                    aiMode ? 'btn-primary' : 'btn-secondary'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>Theme Customizer</span>
                 </button>
                 <button onClick={toggleTheme} className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -160,6 +179,12 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Theme Customizer Modal */}
+      <ThemeCustomizer
+        isOpen={showThemeCustomizer}
+        onClose={() => setShowThemeCustomizer(false)}
+      />
     </nav>
   );
 };

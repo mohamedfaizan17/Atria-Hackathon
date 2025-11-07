@@ -6,62 +6,32 @@ const applicationSchema = new mongoose.Schema({
     ref: 'Job',
     required: true
   },
-  applicant: {
-    name: {
-      type: String,
-      required: true
-    },
-    email: {
-      type: String,
-      required: true
-    },
-    phone: {
-      type: String,
-      required: true
-    },
-    linkedin: String,
-    portfolio: String
+  name: {
+    type: String,
+    required: true
   },
-  resume: {
-    filename: String,
-    path: String,
-    size: Number,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
+  email: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  resumeUrl: {
+    type: String
   },
   coverLetter: {
     type: String
-  },
-  aiScore: {
-    overall: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    skillMatch: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    experienceMatch: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    educationMatch: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    analysis: String,
-    recommendations: [String]
   },
   status: {
     type: String,
     enum: ['submitted', 'under_review', 'shortlisted', 'rejected', 'accepted'],
     default: 'submitted'
+  },
+  submittedAt: {
+    type: Date,
+    default: Date.now
   },
   reviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -73,7 +43,7 @@ const applicationSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-applicationSchema.index({ job: 1, 'applicant.email': 1 });
+applicationSchema.index({ job: 1, email: 1 });
 applicationSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Application', applicationSchema);

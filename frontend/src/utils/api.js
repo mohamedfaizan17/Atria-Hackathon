@@ -75,6 +75,15 @@ export const careerAPI = {
   updateApplicationStatus: (id, data) => api.put(`/career/applications/${id}/status`, data),
 };
 
+// Jobs Services (New API)
+export const jobsAPI = {
+  getJobs: () => api.get('/jobs'),
+  getJob: (id) => api.get(`/jobs/${id}`),
+  seedJobs: () => api.post('/jobs/seed'),
+  applyJob: (jobId, data) => api.post(`/jobs/${jobId}/apply`, data),
+  getApplications: (jobId) => api.get(`/jobs/${jobId}/applications`),
+};
+
 // Contact Services
 export const contactAPI = {
   submit: (data) => api.post('/contact', data),
