@@ -1,4 +1,5 @@
-const prisma = require('../lib/prisma');
+const Job = require('../models/Job');
+const Application = require('../models/Application');
 const { analyzeResume } = require('./aiController');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
@@ -11,38 +12,20 @@ exports.getJobs = async (req, res, next) => {
   try {
     const { department, type, location, isActive } = req.query;
     
-    const where = {};
-    if (department) where.department = department;
-    if (type) where.type = type;
-    if (location) where.location = { contains: location, mode: 'insensitive' };
-    if (isActive !== undefined) where.isActive = isActive === 'true';
+    const filter = {};
+    if (department) filter.department = department;
+    if (type) filter.type = type;
+    if (location) filter.location = new RegExp(location, 'i');
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
 
-    const jobs = await prisma.job.findMany({
-      where,
-      include: {
-        postedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Parse JSON strings back to arrays
-    const jobsWithParsedData = jobs.map(job => ({
-      ...job,
-      requirements: job.requirements ? JSON.parse(job.requirements) : [],
-      responsibilities: job.responsibilities ? JSON.parse(job.responsibilities) : [],
-      skills: job.skills ? JSON.parse(job.skills) : []
-    }));
+    const jobs = await Job.find(filter)
+      .populate('postedBy', 'name email')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      count: jobsWithParsedData.length,
-      data: jobsWithParsedData
+      count: jobs.length,
+      data: jobs
     });
   } catch (error) {
     next(error);
@@ -54,18 +37,7 @@ exports.getJobs = async (req, res, next) => {
 // @access  Public
 exports.getJob = async (req, res, next) => {
   try {
-    const job = await prisma.job.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        postedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const job = await Job.findById(req.params.id).populate('postedBy', 'name email');
 
     if (!job) {
       return res.status(404).json({
@@ -74,17 +46,9 @@ exports.getJob = async (req, res, next) => {
       });
     }
 
-    // Parse JSON strings
-    const jobWithParsedData = {
-      ...job,
-      requirements: job.requirements ? JSON.parse(job.requirements) : [],
-      responsibilities: job.responsibilities ? JSON.parse(job.responsibilities) : [],
-      skills: job.skills ? JSON.parse(job.skills) : []
-    };
-
     res.status(200).json({
       success: true,
-      data: jobWithParsedData
+      data: job
     });
   } catch (error) {
     next(error);
@@ -96,27 +60,13 @@ exports.getJob = async (req, res, next) => {
 // @access  Private (Admin)
 exports.createJob = async (req, res, next) => {
   try {
-    const { requirements, responsibilities, skills, ...jobData } = req.body;
-    
-    const job = await prisma.job.create({
-      data: {
-        ...jobData,
-        requirements: JSON.stringify(requirements || []),
-        responsibilities: JSON.stringify(responsibilities || []),
-        skills: JSON.stringify(skills || []),
-        postedById: req.user?.id
-      }
-    });
+    req.body.postedBy = req.user.id;
+    const job = await Job.create(req.body);
 
     res.status(201).json({
       success: true,
       message: 'Job created successfully',
-      data: {
-        ...job,
-        requirements: JSON.parse(job.requirements),
-        responsibilities: JSON.parse(job.responsibilities),
-        skills: JSON.parse(job.skills)
-      }
+      data: job
     });
   } catch (error) {
     next(error);
@@ -128,17 +78,11 @@ exports.createJob = async (req, res, next) => {
 // @access  Private (Admin)
 exports.updateJob = async (req, res, next) => {
   try {
-    const { requirements, responsibilities, skills, ...jobData } = req.body;
-    
-    const updateData = { ...jobData };
-    if (requirements) updateData.requirements = JSON.stringify(requirements);
-    if (responsibilities) updateData.responsibilities = JSON.stringify(responsibilities);
-    if (skills) updateData.skills = JSON.stringify(skills);
-
-    const job = await prisma.job.update({
-      where: { id: parseInt(req.params.id) },
-      data: updateData
-    });
+    const job = await Job.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
 
     if (!job) {
       return res.status(404).json({
@@ -150,12 +94,7 @@ exports.updateJob = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Job updated successfully',
-      data: {
-        ...job,
-        requirements: JSON.parse(job.requirements),
-        responsibilities: JSON.parse(job.responsibilities),
-        skills: JSON.parse(job.skills)
-      }
+      data: job
     });
   } catch (error) {
     next(error);
@@ -167,9 +106,7 @@ exports.updateJob = async (req, res, next) => {
 // @access  Private (Admin)
 exports.deleteJob = async (req, res, next) => {
   try {
-    const job = await prisma.job.delete({
-      where: { id: parseInt(req.params.id) }
-    });
+    const job = await Job.findByIdAndDelete(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -196,10 +133,7 @@ exports.applyJob = async (req, res, next) => {
     const { applicant, coverLetter, resumeText } = req.body;
 
     // Check if job exists
-    const job = await prisma.job.findUnique({
-      where: { id: parseInt(jobId) }
-    });
-
+    const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({
         success: false,
@@ -215,11 +149,9 @@ exports.applyJob = async (req, res, next) => {
     }
 
     // Check if already applied
-    const existingApplication = await prisma.application.findFirst({
-      where: {
-        jobId: parseInt(jobId),
-        email: applicant.email
-      }
+    const existingApplication = await Application.findOne({
+      job: jobId,
+      'applicant.email': applicant.email
     });
 
     if (existingApplication) {
@@ -231,21 +163,18 @@ exports.applyJob = async (req, res, next) => {
 
     // Create application object
     const applicationData = {
-      jobId: parseInt(jobId),
-      name: applicant.name,
-      email: applicant.email,
-      phone: applicant.phone,
-      linkedin: applicant.linkedin,
-      portfolio: applicant.portfolio,
-      location: applicant.location,
+      job: jobId,
+      applicant,
       coverLetter
     };
 
     // Handle resume file if uploaded
     if (req.file) {
-      applicationData.resumeFilename = req.file.filename;
-      applicationData.resumePath = req.file.path;
-      applicationData.resumeSize = req.file.size;
+      applicationData.resume = {
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size
+      };
     }
 
     // AI Resume Scoring (if resume text provided)
@@ -253,9 +182,9 @@ exports.applyJob = async (req, res, next) => {
       try {
         const jobRequirements = `
 Title: ${job.title}
-Skills: ${JSON.parse(job.skills).join(', ')}
-Experience: ${job.experienceLevel}
-Requirements: ${JSON.parse(job.requirements).join(', ')}
+Skills: ${job.skills.join(', ')}
+Experience: ${job.experience}
+Requirements: ${job.requirements.join(', ')}
         `;
 
         // Create a mock request object for AI analysis
@@ -270,12 +199,14 @@ Requirements: ${JSON.parse(job.requirements).join(', ')}
           status: (code) => ({
             json: (data) => {
               if (data.success && data.data) {
-                applicationData.aiScoreOverall = data.data.overall || 75;
-                applicationData.aiScoreSkillMatch = data.data.skillMatch || 70;
-                applicationData.aiScoreExperienceMatch = data.data.experienceMatch || 75;
-                applicationData.aiScoreEducationMatch = data.data.educationMatch || 80;
-                applicationData.aiAnalysis = data.data.analysis || 'Resume analyzed successfully';
-                applicationData.aiRecommendations = JSON.stringify(data.data.recommendations || []);
+                applicationData.aiScore = {
+                  overall: data.data.overall || 75,
+                  skillMatch: data.data.skillMatch || 70,
+                  experienceMatch: data.data.experienceMatch || 75,
+                  educationMatch: data.data.educationMatch || 80,
+                  analysis: data.data.analysis || 'Resume analyzed successfully',
+                  recommendations: data.data.recommendations || []
+                };
               }
             }
           })
@@ -289,31 +220,21 @@ Requirements: ${JSON.parse(job.requirements).join(', ')}
     }
 
     // Create application
-    const application = await prisma.application.create({
-      data: applicationData
-    });
+    const application = await Application.create(applicationData);
 
     // Update job applications count
-    await prisma.job.update({
-      where: { id: parseInt(jobId) },
-      data: {
-        applicationsCount: { increment: 1 }
-      }
-    });
+    job.applicationsCount += 1;
+    await job.save();
+
+    // Send email notification (implement email service)
+    // await sendApplicationEmail(applicant.email, job);
 
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully',
       data: {
-        applicationId: application.id,
-        aiScore: application.aiScoreOverall ? {
-          overall: application.aiScoreOverall,
-          skillMatch: application.aiScoreSkillMatch,
-          experienceMatch: application.aiScoreExperienceMatch,
-          educationMatch: application.aiScoreEducationMatch,
-          analysis: application.aiAnalysis,
-          recommendations: application.aiRecommendations ? JSON.parse(application.aiRecommendations) : []
-        } : null
+        applicationId: application._id,
+        aiScore: application.aiScore
       }
     });
   } catch (error) {
@@ -328,35 +249,18 @@ exports.getApplications = async (req, res, next) => {
   try {
     const { job, status } = req.query;
     
-    const where = {};
-    if (job) where.jobId = parseInt(job);
-    if (status) where.status = status;
+    const filter = {};
+    if (job) filter.job = job;
+    if (status) filter.status = status;
 
-    const applications = await prisma.application.findMany({
-      where,
-      include: {
-        job: {
-          select: {
-            id: true,
-            title: true,
-            department: true,
-            location: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Parse JSON strings
-    const appsWithParsedData = applications.map(app => ({
-      ...app,
-      aiRecommendations: app.aiRecommendations ? JSON.parse(app.aiRecommendations) : []
-    }));
+    const applications = await Application.find(filter)
+      .populate('job', 'title department location')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      count: appsWithParsedData.length,
-      data: appsWithParsedData
+      count: applications.length,
+      data: applications
     });
   } catch (error) {
     next(error);
@@ -368,19 +272,9 @@ exports.getApplications = async (req, res, next) => {
 // @access  Private (Admin)
 exports.getApplication = async (req, res, next) => {
   try {
-    const application = await prisma.application.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        job: true,
-        reviewedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const application = await Application.findById(req.params.id)
+      .populate('job')
+      .populate('reviewedBy', 'name email');
 
     if (!application) {
       return res.status(404).json({
@@ -389,21 +283,9 @@ exports.getApplication = async (req, res, next) => {
       });
     }
 
-    // Parse JSON strings
-    const appWithParsedData = {
-      ...application,
-      job: {
-        ...application.job,
-        requirements: application.job.requirements ? JSON.parse(application.job.requirements) : [],
-        responsibilities: application.job.responsibilities ? JSON.parse(application.job.responsibilities) : [],
-        skills: application.job.skills ? JSON.parse(application.job.skills) : []
-      },
-      aiRecommendations: application.aiRecommendations ? JSON.parse(application.aiRecommendations) : []
-    };
-
     res.status(200).json({
       success: true,
-      data: appWithParsedData
+      data: application
     });
   } catch (error) {
     next(error);
@@ -417,14 +299,7 @@ exports.updateApplicationStatus = async (req, res, next) => {
   try {
     const { status, reviewNotes } = req.body;
 
-    const application = await prisma.application.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        status,
-        reviewNotes,
-        reviewedById: req.user?.id
-      }
-    });
+    const application = await Application.findById(req.params.id);
 
     if (!application) {
       return res.status(404).json({
@@ -432,6 +307,15 @@ exports.updateApplicationStatus = async (req, res, next) => {
         message: 'Application not found'
       });
     }
+
+    application.status = status;
+    application.reviewNotes = reviewNotes;
+    application.reviewedBy = req.user.id;
+
+    await application.save();
+
+    // Send status update email to applicant
+    // await sendStatusUpdateEmail(application);
 
     res.status(200).json({
       success: true,
@@ -448,25 +332,9 @@ exports.updateApplicationStatus = async (req, res, next) => {
 // @access  Private (Admin)
 exports.downloadApplicationPDF = async (req, res, next) => {
   try {
-    const application = await prisma.application.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        job: {
-          select: {
-            title: true,
-            department: true,
-            location: true,
-            salary: true
-          }
-        },
-        reviewedBy: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const application = await Application.findById(req.params.id)
+      .populate('job', 'title department location salary')
+      .populate('reviewedBy', 'name email');
 
     if (!application) {
       return res.status(404).json({
@@ -482,7 +350,7 @@ exports.downloadApplicationPDF = async (req, res, next) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=application-${application.name.replace(/\s+/g, '-')}-${Date.now()}.pdf`
+      `attachment; filename=application-${application.applicant.name.replace(/\s+/g, '-')}-${Date.now()}.pdf`
     );
 
     // Pipe PDF to response
@@ -511,17 +379,17 @@ exports.downloadApplicationPDF = async (req, res, next) => {
     doc.fontSize(16).font('Helvetica-Bold').text('Applicant Information');
     doc.moveDown(0.5);
     doc.fontSize(11).font('Helvetica');
-    doc.text(`Name: ${application.name}`);
-    doc.text(`Email: ${application.email}`);
-    doc.text(`Phone: ${application.phone}`);
-    if (application.linkedin) {
-      doc.text(`LinkedIn: ${application.linkedin}`);
+    doc.text(`Name: ${application.applicant.name}`);
+    doc.text(`Email: ${application.applicant.email}`);
+    doc.text(`Phone: ${application.applicant.phone}`);
+    if (application.applicant.linkedin) {
+      doc.text(`LinkedIn: ${application.applicant.linkedin}`);
     }
-    if (application.portfolio) {
-      doc.text(`Portfolio: ${application.portfolio}`);
+    if (application.applicant.portfolio) {
+      doc.text(`Portfolio: ${application.applicant.portfolio}`);
     }
-    if (application.location) {
-      doc.text(`Location: ${application.location}`);
+    if (application.applicant.location) {
+      doc.text(`Location: ${application.applicant.location}`);
     }
     doc.moveDown();
 
@@ -537,34 +405,31 @@ exports.downloadApplicationPDF = async (req, res, next) => {
     doc.moveDown();
 
     // AI Score (if available)
-    if (application.aiScoreOverall) {
+    if (application.aiScore) {
       doc.fontSize(16).font('Helvetica-Bold').text('AI Assessment Score');
       doc.moveDown(0.5);
       doc.fontSize(11).font('Helvetica');
-      doc.text(`Overall Score: ${application.aiScoreOverall}%`);
-      doc.text(`Skill Match: ${application.aiScoreSkillMatch}%`);
-      doc.text(`Experience Match: ${application.aiScoreExperienceMatch}%`);
-      doc.text(`Education Match: ${application.aiScoreEducationMatch}%`);
+      doc.text(`Overall Score: ${application.aiScore.overall}%`);
+      doc.text(`Skill Match: ${application.aiScore.skillMatch}%`);
+      doc.text(`Experience Match: ${application.aiScore.experienceMatch}%`);
+      doc.text(`Education Match: ${application.aiScore.educationMatch}%`);
       
-      if (application.aiAnalysis) {
+      if (application.aiScore.analysis) {
         doc.moveDown(0.5);
         doc.fontSize(12).font('Helvetica-Bold').text('Analysis:');
-        doc.fontSize(11).font('Helvetica').text(application.aiAnalysis, {
+        doc.fontSize(11).font('Helvetica').text(application.aiScore.analysis, {
           width: 500,
           align: 'justify'
         });
       }
       
-      if (application.aiRecommendations) {
-        const recommendations = JSON.parse(application.aiRecommendations);
-        if (recommendations.length > 0) {
-          doc.moveDown(0.5);
-          doc.fontSize(12).font('Helvetica-Bold').text('Recommendations:');
-          doc.fontSize(11).font('Helvetica');
-          recommendations.forEach((rec, index) => {
-            doc.text(`${index + 1}. ${rec}`, { indent: 10 });
-          });
-        }
+      if (application.aiScore.recommendations && application.aiScore.recommendations.length > 0) {
+        doc.moveDown(0.5);
+        doc.fontSize(12).font('Helvetica-Bold').text('Recommendations:');
+        doc.fontSize(11).font('Helvetica');
+        application.aiScore.recommendations.forEach((rec, index) => {
+          doc.text(`${index + 1}. ${rec}`, { indent: 10 });
+        });
       }
       doc.moveDown();
     }
@@ -592,12 +457,12 @@ exports.downloadApplicationPDF = async (req, res, next) => {
     }
 
     // Resume Information
-    if (application.resumeFilename) {
+    if (application.resume && application.resume.filename) {
       doc.fontSize(16).font('Helvetica-Bold').text('Resume');
       doc.moveDown(0.5);
       doc.fontSize(11).font('Helvetica');
-      doc.text(`Filename: ${application.resumeFilename}`);
-      doc.text(`File Size: ${(application.resumeSize / 1024).toFixed(2)} KB`);
+      doc.text(`Filename: ${application.resume.filename}`);
+      doc.text(`File Size: ${(application.resume.size / 1024).toFixed(2)} KB`);
       doc.text(`Resume file is stored separately and can be accessed from the system.`);
     }
 

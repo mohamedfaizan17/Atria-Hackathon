@@ -1,10 +1,10 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const prisma = require('./lib/prisma');
 require('dotenv').config();
 
 const app = express();
@@ -32,15 +32,16 @@ app.use('/api/', limiter);
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/content', require('./routes/content'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/career', require('./routes/career'));
-app.use('/api/jobs', require('./routes/jobs'));
-app.use('/api/suggestions', require('./routes/aiSuggestions'));
-app.use('/api/contact', require('./routes/contact'));
-app.use('/api/blog', require('./routes/blog'));
-app.use('/api/analytics', require('./routes/analytics'));
+// TODO: Convert remaining controllers from Mongoose to Prisma
+// app.use('/api/auth', require('./routes/auth'));
+// app.use('/api/content', require('./routes/content'));
+// app.use('/api/ai', require('./routes/ai'));
+app.use('/api/career', require('./routes/career')); // ✅ Converted to Prisma + SQLite
+// app.use('/api/jobs', require('./routes/jobs'));
+// app.use('/api/suggestions', require('./routes/aiSuggestions'));
+// app.use('/api/contact', require('./routes/contact'));
+app.use('/api/blog', require('./routes/blog')); // ✅ Converted to Prisma + AI Features
+// app.use('/api/analytics', require('./routes/analytics'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -71,25 +72,38 @@ app.use((req, res) => {
 
 // Database connection
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mastersolis';
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
+// Test Prisma/SQLite connection
+async function testDatabaseConnection() {
+  try {
+    await prisma.$connect();
+    console.log('✅ SQLite database connected successfully');
+    console.log('📊 Database: dev.db (No MongoDB needed!)');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+  }
+}
+
+// Start server
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📡 Backend API: http://localhost:${PORT}`);
+  
+  // Test database connection
+  await testDatabaseConnection();
+});
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
-  mongoose.connection.close();
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('\nSIGINT signal received: closing HTTP server');
+  await prisma.$disconnect();
   process.exit(0);
 });
 

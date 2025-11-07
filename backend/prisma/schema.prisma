@@ -1,0 +1,231 @@
+// Mastersolis Infotech - Prisma Schema
+// Database: SQLite (no external database required)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user") // admin, user, recruiter
+  avatar    String?
+  isActive  Boolean  @default(true)
+  lastLogin DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  jobs            Job[]
+  blogs           Blog[]
+  siteContents    SiteContent[]
+  assignedContacts Contact[]
+  reviewedApplications Application[]
+}
+
+// Job Model
+model Job {
+  id                Int      @id @default(autoincrement())
+  title             String
+  department        String
+  location          String
+  type              String   @default("Full-Time") // Full-Time, Part-Time, Contract, Internship
+  experienceLevel   String   @default("Mid-Level")
+  description       String
+  requirements      String   // JSON string array
+  responsibilities  String   // JSON string array
+  skills            String   // JSON string array
+  salary            String?
+  posted            DateTime @default(now())
+  deadline          DateTime?
+  isActive          Boolean  @default(true)
+  applicationsCount Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  postedById String?
+  postedBy   User?   @relation(fields: [postedById], references: [id])
+  applications Application[]
+}
+
+// Application Model
+model Application {
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String
+  phone         String
+  linkedin      String?
+  portfolio     String?
+  location      String?
+  resumeFilename String?
+  resumePath    String?
+  resumeSize    Int?
+  coverLetter   String?
+  
+  // AI Score
+  aiScoreOverall          Int?
+  aiScoreSkillMatch       Int?
+  aiScoreExperienceMatch  Int?
+  aiScoreEducationMatch   Int?
+  aiAnalysis              String?
+  aiRecommendations       String? // JSON string array
+  
+  status        String   @default("submitted") // submitted, under_review, shortlisted, rejected, accepted
+  submittedAt   DateTime @default(now())
+  reviewNotes   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  jobId        Int
+  job          Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewedById String?
+  reviewedBy   User?   @relation(fields: [reviewedById], references: [id])
+
+  @@index([jobId, email])
+  @@index([status])
+}
+
+// Blog Model
+model Blog {
+  id                   Int       @id @default(autoincrement())
+  title                String
+  slug                 String    @unique
+  content              String
+  summary              String?
+  seoDescription       String?
+  aiGeneratedSummary   String?
+  category             String
+  tags                 String    // JSON string array
+  featuredImage        String?
+  isPublished          Boolean   @default(false)
+  publishedAt          DateTime?
+  views                Int       @default(0)
+  likes                Int       @default(0)
+  readTime             Int?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+}
+
+// Contact Model
+model Contact {
+  id          Int       @id @default(autoincrement())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String
+  company     String?
+  isRead      Boolean   @default(false)
+  repliedAt   DateTime?
+  aiResponse  String?
+  status      String    @default("new") // new, in-progress, resolved, closed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  assignedToId String?
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id])
+}
+
+// Project Model
+model Project {
+  id                   Int       @id @default(autoincrement())
+  title                String
+  description          String
+  aiGeneratedSummary   String?
+  client               String?
+  industry             String
+  category             String
+  tags                 String    // JSON string array
+  technologies         String    // JSON string array
+  images               String?   // JSON string array of {url, caption}
+  thumbnailImage       String?
+  demoUrl              String?
+  githubUrl            String?
+  duration             String?
+  teamSize             Int?
+  status               String    @default("completed") // completed, in-progress, planned
+  featured             Boolean   @default(false)
+  completedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  testimonialId Int?         @unique
+  testimonial   Testimonial? @relation(fields: [testimonialId], references: [id])
+}
+
+// Testimonial Model
+model Testimonial {
+  id              Int      @id @default(autoincrement())
+  clientName      String
+  clientPosition  String
+  clientCompany   String
+  clientImage     String?
+  rating          Int      // 1-5
+  content         String
+  aiRephrased     String?
+  isApproved      Boolean  @default(false)
+  isFeatured      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  project Project?
+}
+
+// SiteContent Model
+model SiteContent {
+  id               Int       @id @default(autoincrement())
+  section          String    @unique // hero, about, mission, vision, services, cta, footer
+  title            String?
+  subtitle         String?
+  content          String?
+  items            String?   // JSON string array
+  images           String?   // JSON string array of {url, alt}
+  isAIGenerated    Boolean   @default(false)
+  aiPrompt         String?
+  lastGeneratedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  updatedById String?
+  updatedBy   User?   @relation(fields: [updatedById], references: [id])
+}
+
+// Analytics Model
+model Analytics {
+  id              Int      @id @default(autoincrement())
+  date            DateTime @default(now())
+  pageViews       Int      @default(0)
+  uniqueVisitors  Int      @default(0)
+  pageData        String?  // JSON string array
+  sources         String?  // JSON string array
+  devicesDesktop  Int      @default(0)
+  devicesMobile   Int      @default(0)
+  devicesTablet   Int      @default(0)
+  browsers        String?  // JSON string array
+  topCountries    String?  // JSON string array
+  conversionsContactForms      Int @default(0)
+  conversionsJobApplications   Int @default(0)
+  conversionsChatInteractions  Int @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date])
+}

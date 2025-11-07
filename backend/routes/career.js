@@ -9,7 +9,8 @@ const {
   applyJob,
   getApplications,
   getApplication,
-  updateApplicationStatus
+  updateApplicationStatus,
+  downloadApplicationPDF
 } = require('../controllers/careerController');
 const { protect, authorize } = require('../middleware/auth');
 const { uploadResume, handleUploadError } = require('../middleware/upload');
@@ -26,6 +27,7 @@ router.delete('/jobs/:id', protect, authorize('admin'), deleteJob);
 
 router.get('/applications', protect, authorize('admin', 'recruiter'), getApplications);
 router.get('/applications/:id', protect, authorize('admin', 'recruiter'), getApplication);
+router.get('/applications/:id/download', protect, authorize('admin', 'recruiter'), downloadApplicationPDF);
 router.put('/applications/:id/status', protect, authorize('admin', 'recruiter'), updateApplicationStatus);
 
 module.exports = router;
