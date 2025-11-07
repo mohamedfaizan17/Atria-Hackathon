@@ -123,7 +123,7 @@ const ExecutiveTemplate = ({ data = {} }) => {
             Core Competencies
           </h3>
           <div className="grid grid-cols-2 gap-2">
-            {expertise.map((item, idx) => (
+            {(expertise || []).map((item, idx) => (
               <div key={idx} className="flex items-center">
                 <span className="w-2 h-2 bg-gray-800 mr-2"></span>
                 <span className="text-gray-700">{item}</span>
@@ -138,7 +138,7 @@ const ExecutiveTemplate = ({ data = {} }) => {
             Professional Experience
           </h3>
           <div className="space-y-4">
-            {experience.map((exp, idx) => (
+            {(experience || []).map((exp, idx) => (
               <div key={idx}>
                 <div className="flex justify-between items-baseline mb-2">
                   <div>
@@ -151,7 +151,7 @@ const ExecutiveTemplate = ({ data = {} }) => {
                   </div>
                 </div>
                 <ul className="space-y-1 ml-4">
-                  {exp.achievements.map((achievement, i) => (
+                  {(exp.achievements || []).map((achievement, i) => (
                     <li key={i} className="text-gray-700 text-sm flex">
                       <span className="mr-2">•</span>
                       <span>{achievement}</span>
@@ -169,7 +169,7 @@ const ExecutiveTemplate = ({ data = {} }) => {
             Key Achievements
           </h3>
           <ul className="space-y-1 ml-4">
-            {achievements.map((achievement, idx) => (
+            {(achievements || []).map((achievement, idx) => (
               <li key={idx} className="text-gray-700 flex">
                 <span className="mr-2">•</span>
                 <span>{achievement}</span>
@@ -183,7 +183,7 @@ const ExecutiveTemplate = ({ data = {} }) => {
           <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide mb-3 border-b border-gray-300 pb-1">
             Education
           </h3>
-          {education.map((edu, idx) => (
+          {(education || []).map((edu, idx) => (
             <div key={idx} className="mb-2">
               <div className="flex justify-between items-baseline">
                 <div>

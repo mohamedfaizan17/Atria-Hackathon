@@ -87,7 +87,7 @@ const MinimalistTemplate = ({ data = {} }) => {
         <section>
           <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-wide">Experience</h2>
           <div className="space-y-6">
-            {experience.map((exp, idx) => (
+            {(experience || []).map((exp, idx) => (
               <div key={idx}>
                 <div className="flex justify-between items-baseline mb-2">
                   <div>
@@ -97,7 +97,7 @@ const MinimalistTemplate = ({ data = {} }) => {
                   <span className="text-sm text-gray-500">{exp.period}</span>
                 </div>
                 <ul className="space-y-1 text-gray-700">
-                  {exp.achievements.map((achievement, i) => (
+                  {(exp.achievements || []).map((achievement, i) => (
                     <li key={i} className="text-sm leading-relaxed">
                       — {achievement}
                     </li>
@@ -112,7 +112,7 @@ const MinimalistTemplate = ({ data = {} }) => {
         <section>
           <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-wide">Education</h2>
           <div className="space-y-3">
-            {education.map((edu, idx) => (
+            {(education || []).map((edu, idx) => (
               <div key={idx} className="flex justify-between items-baseline">
                 <div>
                   <h3 className="font-semibold text-gray-900">{edu.degree}</h3>
@@ -128,7 +128,7 @@ const MinimalistTemplate = ({ data = {} }) => {
         <section>
           <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-wide">Skills</h2>
           <div className="flex flex-wrap gap-3">
-            {skills.map((skill, idx) => (
+            {(skills || []).map((skill, idx) => (
               <span key={idx} className="text-sm text-gray-700 border border-gray-300 px-3 py-1 rounded">
                 {skill}
               </span>

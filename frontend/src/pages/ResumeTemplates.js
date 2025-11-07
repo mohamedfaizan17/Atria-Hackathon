@@ -2,16 +2,26 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Eye, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import ModernTemplate from '../components/templates/ModernTemplate';
-import ExecutiveTemplate from '../components/templates/ExecutiveTemplate';
-import CreativeTemplate from '../components/templates/CreativeTemplate';
-import MinimalistTemplate from '../components/templates/MinimalistTemplate';
-import TechnicalTemplate from '../components/templates/TechnicalTemplate';
-import AcademicTemplate from '../components/templates/AcademicTemplate';
+
+// Lazy load templates with error handling
+let ModernTemplate, ExecutiveTemplate, CreativeTemplate, MinimalistTemplate, TechnicalTemplate, AcademicTemplate;
+
+try {
+  ModernTemplate = require('../components/templates/ModernTemplate').default;
+  ExecutiveTemplate = require('../components/templates/ExecutiveTemplate').default;
+  CreativeTemplate = require('../components/templates/CreativeTemplate').default;
+  MinimalistTemplate = require('../components/templates/MinimalistTemplate').default;
+  TechnicalTemplate = require('../components/templates/TechnicalTemplate').default;
+  AcademicTemplate = require('../components/templates/AcademicTemplate').default;
+  console.log('✅ All templates loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading templates:', error);
+}
 
 const ResumeTemplates = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [templateError, setTemplateError] = useState(null);
 
   // Sample resume data for previews
   const sampleData = {
@@ -198,9 +208,24 @@ const ResumeTemplates = () => {
               Live Preview
             </h3>
             <div className="bg-white rounded-lg shadow-2xl overflow-hidden mx-auto" style={{ maxWidth: '800px' }}>
-              <div className="transform scale-75 origin-top">
-                <TemplateComponent data={sampleData} />
-              </div>
+              {TemplateComponent ? (
+                <div className="transform scale-75 origin-top">
+                  <TemplateComponent data={sampleData} />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96">
+                  <div className="text-center">
+                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">Template preview not available</p>
+                    <button
+                      onClick={() => setShowPreview(false)}
+                      className="mt-4 btn-primary"
+                    >
+                      Back to Templates
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -256,12 +281,26 @@ const ResumeTemplates = () => {
                 className="card group hover:shadow-2xl transition-all duration-300"
               >
                 {/* Template Preview Thumbnail */}
-                <div className="h-64 rounded-xl mb-4 relative overflow-hidden bg-white border-2 border-gray-200 dark:border-gray-700 group-hover:border-primary-400 transition-all">
-                  {/* Mini Template Preview */}
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    <div className="transform scale-[0.15] origin-top-left" style={{ width: '210mm', height: '297mm' }}>
-                      <template.component data={sampleData} />
+                <div className={`h-64 rounded-xl mb-4 relative overflow-hidden bg-gradient-to-br ${template.color} border-2 border-gray-200 dark:border-gray-700 group-hover:border-primary-400 transition-all`}>
+                  {/* Decorative Pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-4 left-4 right-4 h-3 bg-white rounded"></div>
+                    <div className="absolute top-10 left-4 right-4 h-2 bg-white rounded"></div>
+                    <div className="absolute top-16 left-4 w-1/2 h-2 bg-white rounded"></div>
+                    <div className="absolute top-24 left-4 right-4 space-y-2">
+                      <div className="h-2 bg-white rounded w-full"></div>
+                      <div className="h-2 bg-white rounded w-5/6"></div>
+                      <div className="h-2 bg-white rounded w-4/6"></div>
                     </div>
+                    <div className="absolute top-40 left-4 right-4 space-y-2">
+                      <div className="h-2 bg-white rounded w-full"></div>
+                      <div className="h-2 bg-white rounded w-3/4"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Template Icon */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-20">
+                    <FileText className="w-24 h-24 text-white" />
                   </div>
                   
                   {/* Gradient Overlay */}

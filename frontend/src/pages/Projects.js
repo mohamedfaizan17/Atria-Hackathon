@@ -4,12 +4,88 @@ import { ExternalLink, Github, Filter } from 'lucide-react';
 import { contentAPI } from '../utils/api';
 import toast from 'react-hot-toast';
 
+// Dummy projects for demo
+const dummyProjects = [
+  {
+    _id: '1',
+    title: 'AI-Powered Resume Builder',
+    description: 'Intelligent resume creation tool with AI suggestions, multiple templates, and ATS optimization.',
+    category: 'AI Tools',
+    status: 'Completed',
+    technologies: ['React', 'Node.js', 'Gemini AI', 'MongoDB', 'TailwindCSS'],
+    thumbnailImage: '',
+    demoUrl: '/resume-builder',
+    githubUrl: '#',
+    featured: true
+  },
+  {
+    _id: '2',
+    title: 'ATS Resume Scorer',
+    description: 'Advanced ATS scoring system that analyzes resumes against job descriptions using AI.',
+    category: 'AI Tools',
+    status: 'Completed',
+    technologies: ['React', 'Gemini Pro', 'NLP', 'TailwindCSS'],
+    thumbnailImage: '',
+    demoUrl: '/resume-score',
+    githubUrl: '#',
+    featured: true
+  },
+  {
+    _id: '3',
+    title: 'Applicant Tracking System',
+    description: 'Full-featured ATS for recruiters with AI scoring, candidate management, and analytics.',
+    category: 'Enterprise',
+    status: 'Completed',
+    technologies: ['React', 'Node.js', 'MongoDB', 'Gemini AI', 'Charts'],
+    thumbnailImage: '',
+    demoUrl: '/admin/ats',
+    githubUrl: '#',
+    featured: true
+  },
+  {
+    _id: '4',
+    title: 'Career Hub Platform',
+    description: 'Comprehensive career platform with job listings, applications, and career resources.',
+    category: 'Web App',
+    status: 'Completed',
+    technologies: ['React', 'Express', 'MongoDB', 'Nodemailer'],
+    thumbnailImage: '',
+    demoUrl: '/careers',
+    githubUrl: '#',
+    featured: false
+  },
+  {
+    _id: '5',
+    title: 'AI Blog Platform',
+    description: 'Modern blog platform with AI-powered content summarization and SEO optimization.',
+    category: 'Web App',
+    status: 'Completed',
+    technologies: ['React', 'Node.js', 'Gemini AI', 'Markdown'],
+    thumbnailImage: '',
+    demoUrl: '/blog',
+    githubUrl: '#',
+    featured: false
+  },
+  {
+    _id: '6',
+    title: 'Portfolio Showcase',
+    description: 'Beautiful portfolio website with dark mode, animations, and responsive design.',
+    category: 'Web Design',
+    status: 'Completed',
+    technologies: ['React', 'Framer Motion', 'TailwindCSS'],
+    thumbnailImage: '',
+    demoUrl: '/',
+    githubUrl: '#',
+    featured: false
+  }
+];
+
 const Projects = () => {
-  const [projects, setProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [projects, setProjects] = useState(dummyProjects);
+  const [filteredProjects, setFilteredProjects] = useState(dummyProjects);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [categories, setCategories] = useState(['all']);
+  const [categories, setCategories] = useState(['all', 'AI Tools', 'Web App', 'Enterprise', 'Web Design']);
 
   useEffect(() => {
     fetchProjects();
@@ -22,13 +98,24 @@ const Projects = () => {
   const fetchProjects = async () => {
     try {
       const response = await contentAPI.getProjects();
-      setProjects(response.data.data);
-      
-      // Extract unique categories
-      const uniqueCategories = ['all', ...new Set(response.data.data.map(p => p.category))];
-      setCategories(uniqueCategories);
+      if (response.data.data && response.data.data.length > 0) {
+        setProjects(response.data.data);
+        
+        // Extract unique categories
+        const uniqueCategories = ['all', ...new Set(response.data.data.map(p => p.category))];
+        setCategories(uniqueCategories);
+      } else {
+        // Use dummy data if no projects from API
+        setProjects(dummyProjects);
+        const uniqueCategories = ['all', ...new Set(dummyProjects.map(p => p.category))];
+        setCategories(uniqueCategories);
+      }
     } catch (error) {
-      toast.error('Failed to load projects');
+      console.log('Using dummy projects data');
+      // Use dummy data on error
+      setProjects(dummyProjects);
+      const uniqueCategories = ['all', ...new Set(dummyProjects.map(p => p.category))];
+      setCategories(uniqueCategories);
     } finally {
       setLoading(false);
     }
@@ -52,7 +139,7 @@ const Projects = () => {
             animate={{ opacity: 1, y: 0 }}
             className="section-title mb-6"
           >
-            Our <span className="gradient-text">Projects</span>
+            Interactive <span className="gradient-text">Demo Projects</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -60,7 +147,7 @@ const Projects = () => {
             transition={{ delay: 0.2 }}
             className="section-subtitle max-w-3xl mx-auto"
           >
-            Showcasing our work and the innovative solutions we've delivered
+            Explore our AI-powered tools and innovative solutions. Click on any project to try it live!
           </motion.p>
         </div>
       </section>

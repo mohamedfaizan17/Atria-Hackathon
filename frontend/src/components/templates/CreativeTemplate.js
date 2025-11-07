@@ -105,7 +105,7 @@ const CreativeTemplate = ({ data = {} }) => {
             <h3 className="text-2xl font-bold text-gray-900">Experience</h3>
           </div>
           <div className="space-y-4">
-            {experience.map((exp, idx) => (
+            {(experience || []).map((exp, idx) => (
               <div key={idx} className="relative pl-6 border-l-4 border-pink-300">
                 <div className="absolute w-4 h-4 bg-pink-500 rounded-full -left-2 top-1"></div>
                 <div className="flex justify-between items-start mb-2">
@@ -118,7 +118,7 @@ const CreativeTemplate = ({ data = {} }) => {
                   </span>
                 </div>
                 <ul className="space-y-1">
-                  {exp.achievements.map((achievement, i) => (
+                  {(exp.achievements || []).map((achievement, i) => (
                     <li key={i} className="text-gray-700 text-sm flex items-start">
                       <span className="text-pink-500 mr-2">★</span>
                       <span>{achievement}</span>
@@ -137,14 +137,14 @@ const CreativeTemplate = ({ data = {} }) => {
             <h3 className="text-2xl font-bold text-gray-900">Skills & Expertise</h3>
           </div>
           <div className="space-y-3">
-            {Object.entries(skills).map(([category, items], idx) => (
+            {Object.entries(skills || {}).map(([category, items], idx) => (
               <div key={idx}>
                 <h4 className="font-bold text-gray-800 capitalize mb-2 flex items-center">
                   <span className="w-2 h-2 bg-pink-500 rounded-full mr-2"></span>
                   {category}
                 </h4>
                 <div className="flex flex-wrap gap-2 ml-4">
-                  {items.map((skill, i) => (
+                  {(Array.isArray(items) ? items : []).map((skill, i) => (
                     <span key={i} className="bg-gradient-to-r from-pink-100 to-orange-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
                       {skill}
                     </span>
@@ -162,7 +162,7 @@ const CreativeTemplate = ({ data = {} }) => {
             <h3 className="text-2xl font-bold text-gray-900">Featured Projects</h3>
           </div>
           <div className="grid grid-cols-1 gap-3">
-            {projects.map((project, idx) => (
+            {(projects || []).map((project, idx) => (
               <div key={idx} className="bg-gradient-to-r from-pink-50 to-orange-50 p-4 rounded-lg border-l-4 border-pink-500">
                 <div className="flex justify-between items-start">
                   <div>
@@ -183,7 +183,7 @@ const CreativeTemplate = ({ data = {} }) => {
             <h3 className="text-2xl font-bold text-gray-900">Awards & Recognition</h3>
           </div>
           <div className="space-y-2">
-            {awards.map((award, idx) => (
+            {(awards || []).map((award, idx) => (
               <div key={idx} className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-500 mr-2" />
                 <span className="text-gray-700">{award}</span>

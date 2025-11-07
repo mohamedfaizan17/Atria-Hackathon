@@ -140,19 +140,22 @@ const Home = () => {
               {hero?.subtitle || 'Transforming ideas into intelligent digital solutions with an AI tutor that guides you through the process, visualizes your progress, and makes development engaging with gamification.'}
             </motion.p>
 
-            {/* CTA Buttons */}
+            {/* CTA Button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              className="flex justify-center items-center"
             >
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link 
-                  to="/contact" 
-                  className="group relative inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+                  to="/projects" 
+                  className="group relative inline-flex items-center space-x-2 px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
                 >
-                  <span>Start Learning Free</span>
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                  </svg>
+                  <span>Watch Demo Projects</span>
                   <motion.svg
                     animate={{ x: [0, 4, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
@@ -163,18 +166,6 @@ const Home = () => {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </motion.svg>
-                </Link>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link 
-                  to="/projects" 
-                  className="inline-flex items-center space-x-2 px-8 py-4 bg-white dark:bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-semibold rounded-xl transition-all duration-300 border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 shadow-sm"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                  </svg>
-                  <span>Watch Demo</span>
                 </Link>
               </motion.div>
             </motion.div>

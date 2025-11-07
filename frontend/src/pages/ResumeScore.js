@@ -1,63 +1,59 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Target, CheckCircle, AlertCircle, TrendingUp, FileText, Sparkles } from 'lucide-react';
-import { careerAPI } from '../utils/api';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const ResumeScore = () => {
-  const [file, setFile] = useState(null);
+  const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+  const [candidateName, setCandidateName] = useState('');
+  const [yearsOfExperience, setYearsOfExperience] = useState('');
+  const [skills, setSkills] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile);
-      toast.success('Resume uploaded!');
-    } else {
-      toast.error('Please upload a PDF file');
-    }
-  };
-
   const analyzeResume = async () => {
-    if (!file) {
-      toast.error('Please upload your resume');
+    if (!resumeText.trim()) {
+      toast.error('Please enter your resume text');
       return;
     }
 
-    if (!jobDescription) {
+    if (!jobDescription.trim()) {
       toast.error('Please enter a job description');
       return;
     }
 
     setAnalyzing(true);
     try {
-      // Simulate AI analysis
-      setTimeout(() => {
-        setResults({
-          overallScore: 85,
-          skillMatch: 90,
-          experienceMatch: 85,
-          educationMatch: 80,
-          keywordsFound: ['React', 'Node.js', 'MongoDB', 'REST API', 'Git'],
-          missingKeywords: ['Docker', 'Kubernetes', 'AWS'],
-          strengths: [
-            'Strong technical skills matching job requirements',
-            'Relevant work experience in similar roles',
-            'Good educational background'
-          ],
-          improvements: [
-            'Add cloud platform experience (AWS, Azure)',
-            'Include more quantifiable achievements',
-            'Emphasize leadership and team collaboration'
-          ]
-        });
-        setAnalyzing(false);
-        toast.success('✨ Analysis complete!');
-      }, 2000);
+      console.log('📊 Sending resume for AI analysis...');
+      
+      const response = await api.post('/resume-score/score', {
+        resumeText,
+        jobDescription,
+        candidateName,
+        yearsOfExperience,
+        skills
+      });
+
+      console.log('✅ AI Analysis complete:', response.data);
+
+      setResults({
+        atsScore: response.data.data.atsScore,
+        skillsMatch: response.data.data.skillsMatch,
+        experienceMatch: response.data.data.experienceMatch,
+        keywordsFound: response.data.data.keywordsFound,
+        missingKeywords: response.data.data.missingKeywords,
+        strengths: response.data.data.strengths,
+        improvements: response.data.data.improvements,
+        analysis: response.data.data.analysis
+      });
+      
+      toast.success('✨ AI Analysis complete!');
     } catch (error) {
-      toast.error('Analysis failed');
+      console.error('Analysis error:', error);
+      toast.error(error.response?.data?.error || 'Analysis failed. Please try again.');
+    } finally {
       setAnalyzing(false);
     }
   };
@@ -95,10 +91,10 @@ const ResumeScore = () => {
               </div>
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              AI Resume Scorer
+              ATS AI Resume Scorer
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Get instant AI-powered analysis and score your resume against job descriptions
+              Get instant ATS-powered feedback on your resume. See how well it matches job requirements and optimize for Applicant Tracking Systems.
             </p>
           </motion.div>
         </div>
@@ -109,7 +105,42 @@ const ResumeScore = () => {
         <div className="container-custom max-w-4xl">
           {!results ? (
             <div className="space-y-6">
-              {/* Resume Upload */}
+              {/* Optional Info */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card"
+              >
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  Optional Information (for better analysis)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    value={candidateName}
+                    onChange={(e) => setCandidateName(e.target.value)}
+                    className="input-field"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Years of Experience"
+                    value={yearsOfExperience}
+                    onChange={(e) => setYearsOfExperience(e.target.value)}
+                    className="input-field"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Top Skills (comma-separated)"
+                    value={skills}
+                    onChange={(e) => setSkills(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Resume Text */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -118,29 +149,18 @@ const ResumeScore = () => {
               >
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <FileText className="w-6 h-6 mr-2 text-primary-600" />
-                  Upload Your Resume
+                  Your Resume Text
                 </h3>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="resume-upload"
-                  />
-                  <label
-                    htmlFor="resume-upload"
-                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-primary-500 dark:hover:border-primary-400 transition-all bg-gray-50 dark:bg-gray-800/50"
-                  >
-                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                      {file ? file.name : 'Click to upload or drag and drop'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      PDF files only (Max 5MB)
-                    </p>
-                  </label>
-                </div>
+                <textarea
+                  placeholder="Paste your resume content here (or type it out)...&#10;&#10;Include:&#10;- Work Experience&#10;- Education&#10;- Skills&#10;- Projects&#10;- Certifications&#10;&#10;The more detailed, the better the analysis!"
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  rows={12}
+                  className="textarea-field font-mono text-sm"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {resumeText.split(/\s+/).length} words
+                </p>
               </motion.div>
 
               {/* Job Description */}
@@ -155,12 +175,15 @@ const ResumeScore = () => {
                   Job Description
                 </h3>
                 <textarea
-                  placeholder="Paste the job description here to get a targeted analysis..."
+                  placeholder="Paste the job description here to get a targeted analysis...&#10;&#10;Include:&#10;- Required Skills&#10;- Experience Level&#10;- Responsibilities&#10;- Qualifications"
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
-                  rows={8}
+                  rows={10}
                   className="textarea-field"
                 />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {jobDescription.split(/\s+/).length} words
+                </p>
               </motion.div>
 
               {/* Analyze Button */}
@@ -189,7 +212,7 @@ const ResumeScore = () => {
               animate={{ opacity: 1 }}
               className="space-y-6"
             >
-              {/* Overall Score */}
+              {/* Overall ATS Score */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -203,26 +226,30 @@ const ResumeScore = () => {
                   className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-white dark:bg-gray-800 shadow-2xl mb-4"
                 >
                   <div className="text-center">
-                    <div className={`text-5xl font-black ${getScoreColor(results.overallScore)}`}>
-                      {results.overallScore}
+                    <div className={`text-5xl font-black ${getScoreColor(results.atsScore)}`}>
+                      {results.atsScore}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">out of 100</div>
                   </div>
                 </motion.div>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Resume Score
+                  ATS Score
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Your resume is {results.overallScore >= 80 ? 'excellent' : results.overallScore >= 60 ? 'good' : 'needs improvement'}
+                  Your resume is {results.atsScore >= 80 ? '🌟 excellent' : results.atsScore >= 60 ? '👍 good' : '⚠️ needs improvement'}
                 </p>
+                {results.analysis && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-4 italic">
+                    "{results.analysis}"
+                  </p>
+                )}
               </motion.div>
 
               {/* Detailed Scores */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { label: 'Skill Match', score: results.skillMatch, icon: Target },
-                  { label: 'Experience Match', score: results.experienceMatch, icon: TrendingUp },
-                  { label: 'Education Match', score: results.educationMatch, icon: CheckCircle }
+                  { label: 'Skills Match', score: results.skillsMatch, icon: Target, color: 'blue' },
+                  { label: 'Experience Match', score: results.experienceMatch, icon: TrendingUp, color: 'purple' }
                 ].map((item, index) => (
                   <motion.div
                     key={item.label}
@@ -234,7 +261,7 @@ const ResumeScore = () => {
                     <div className="flex items-center justify-between mb-2">
                       <item.icon className={`w-6 h-6 ${getScoreColor(item.score)}`} />
                       <span className={`text-3xl font-bold ${getScoreColor(item.score)}`}>
-                        {item.score}%
+                        {item.score}
                       </span>
                     </div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">{item.label}</h4>

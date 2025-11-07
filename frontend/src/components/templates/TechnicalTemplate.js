@@ -131,14 +131,14 @@ const TechnicalTemplate = ({ data = {} }) => {
             <h3 className="text-lg font-bold text-gray-900">$ ls skills/</h3>
           </div>
           <div className="space-y-3">
-            {Object.entries(technicalSkills).map(([category, skills], idx) => (
+            {Object.entries(technicalSkills || {}).map(([category, skills], idx) => (
               <div key={idx}>
                 <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2 flex items-center">
                   <span className="text-green-600 mr-2">├──</span>
                   {category}/
                 </h4>
                 <div className="flex flex-wrap gap-2 ml-6">
-                  {skills.map((skill, i) => (
+                  {(Array.isArray(skills) ? skills : []).map((skill, i) => (
                     <span key={i} className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-xs font-mono">
                       {skill}
                     </span>
@@ -156,14 +156,14 @@ const TechnicalTemplate = ({ data = {} }) => {
             <h3 className="text-lg font-bold text-gray-900">$ cat experience.log</h3>
           </div>
           <div className="space-y-4">
-            {experience.map((exp, idx) => (
+            {(experience || []).map((exp, idx) => (
               <div key={idx} className="border-l-2 border-gray-300 pl-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-bold text-gray-900">{exp.title}</h4>
                     <p className="text-gray-600">{exp.company}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {exp.technologies.map((tech, i) => (
+                      {(exp.technologies || []).map((tech, i) => (
                         <span key={i} className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
                           {tech}
                         </span>
@@ -173,7 +173,7 @@ const TechnicalTemplate = ({ data = {} }) => {
                   <span className="text-sm text-gray-500 font-mono">{exp.period}</span>
                 </div>
                 <ul className="space-y-1 text-sm text-gray-700">
-                  {exp.achievements.map((achievement, i) => (
+                  {(exp.achievements || []).map((achievement, i) => (
                     <li key={i} className="flex">
                       <span className="text-green-600 mr-2">▸</span>
                       <span>{achievement}</span>
@@ -192,7 +192,7 @@ const TechnicalTemplate = ({ data = {} }) => {
             <h3 className="text-lg font-bold text-gray-900">$ ls projects/</h3>
           </div>
           <div className="space-y-3">
-            {projects.map((project, idx) => (
+            {(projects || []).map((project, idx) => (
               <div key={idx} className="bg-gray-50 p-4 rounded border border-gray-200">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-gray-900 font-mono">{project.name}</h4>
@@ -202,7 +202,7 @@ const TechnicalTemplate = ({ data = {} }) => {
                 </div>
                 <p className="text-sm text-gray-700 mb-2">{project.description}</p>
                 <div className="flex flex-wrap gap-1">
-                  {project.technologies.map((tech, i) => (
+                  {(project.technologies || []).map((tech, i) => (
                     <span key={i} className="text-xs bg-gray-800 text-gray-100 px-2 py-0.5 rounded font-mono">
                       {tech}
                     </span>
@@ -220,7 +220,7 @@ const TechnicalTemplate = ({ data = {} }) => {
               <GraduationCap className="w-5 h-5 mr-2 text-indigo-600" />
               <h3 className="text-lg font-bold text-gray-900">Education</h3>
             </div>
-            {education.map((edu, idx) => (
+            {(education || []).map((edu, idx) => (
               <div key={idx}>
                 <h4 className="font-bold text-gray-900">{edu.degree}</h4>
                 <p className="text-gray-600">{edu.school}</p>
@@ -236,7 +236,7 @@ const TechnicalTemplate = ({ data = {} }) => {
               <h3 className="text-lg font-bold text-gray-900">Certifications</h3>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
-              {certifications.map((cert, idx) => (
+              {(certifications || []).map((cert, idx) => (
                 <li key={idx} className="flex">
                   <span className="text-green-600 mr-2">✓</span>
                   <span>{cert}</span>

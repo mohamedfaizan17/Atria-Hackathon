@@ -59,160 +59,140 @@ router.post('/seed', async (req, res) => {
 
     const dummyJobs = [
       {
-        title: 'Senior Full Stack Developer',
+        title: 'Full Stack Engineer (Next.js + Node)',
         department: 'Engineering',
-        location: 'Remote',
+        location: 'Remote / Bengaluru',
         type: 'Full-Time',
-        description: 'We are looking for an experienced Full Stack Developer to join our engineering team. You will work on cutting-edge AI-powered applications, building scalable web solutions that impact millions of users.',
+        description: 'Own features end‑to‑end across a modern Next.js + Node stack. Ship fast, write clean code, and collaborate with design to deliver pixel‑perfect UX.',
         requirements: [
-          '5+ years of experience in full-stack development',
-          'Strong proficiency in React, Node.js, and MongoDB',
-          'Experience with cloud platforms (AWS, Azure, or GCP)',
-          'Knowledge of RESTful APIs and microservices architecture',
-          'Excellent problem-solving and communication skills'
+          '3+ years building production web apps',
+          'Strong with React/Next.js, Node.js, and MongoDB',
+          'Comfortable with REST/GraphQL and auth flows',
+          'Good grasp of performance, a11y, and testing'
         ],
         responsibilities: [
-          'Design and develop scalable web applications',
-          'Collaborate with cross-functional teams',
-          'Write clean, maintainable code',
-          'Mentor junior developers',
-          'Participate in code reviews and technical discussions'
+          'Design, build, and maintain scalable services',
+          'Collaborate closely with design and product',
+          'Write maintainable, well‑tested code',
+          'Review PRs and mentor junior engineers'
         ],
-        skills: ['React', 'Node.js', 'MongoDB', 'TypeScript', 'AWS', 'Docker'],
-        salary: '$120,000 - $160,000',
-        experienceLevel: 'Senior',
+        skills: ['Next.js', 'Node.js', 'TypeScript', 'MongoDB', 'Tailwind CSS', 'REST', 'GraphQL'],
+        salary: '₹18L – ₹28L / year',
+        experienceLevel: 'Mid-Level',
         posted: new Date(),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        deadline: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000)
       },
       {
-        title: 'AI/ML Engineer',
-        department: 'Data Science',
-        location: 'Hybrid - San Francisco',
+        title: 'AI Engineer (LLMs & RAG)',
+        department: 'AI/ML',
+        location: 'Hybrid – Bengaluru',
         type: 'Full-Time',
-        description: 'Join our AI team to build and deploy machine learning models that power our intelligent applications. Work with state-of-the-art technologies including GPT, BERT, and custom neural networks.',
+        description: 'Prototype and productionize LLM‑powered features. Build RAG pipelines, evaluate models, and optimize latency & cost for real‑world usage.',
         requirements: [
-          'MS or PhD in Computer Science, AI, or related field',
-          '3+ years of experience in machine learning',
-          'Strong Python programming skills',
-          'Experience with TensorFlow, PyTorch, or similar frameworks',
-          'Understanding of NLP and computer vision'
+          '2+ years hands‑on with NLP/LLMs',
+          'Python, vector databases, prompt engineering',
+          'Familiar with OpenAI/Gemini or OSS models',
+          'Experience with evaluation & guardrails is a plus'
         ],
         responsibilities: [
-          'Develop and train machine learning models',
-          'Optimize model performance and accuracy',
-          'Deploy models to production environments',
-          'Research new AI technologies and techniques',
-          'Collaborate with product teams on AI features'
+          'Build retrieval‑augmented generation pipelines',
+          'Own evaluation and prompt iteration loops',
+          'Ship inference services with monitoring',
+          'Collaborate with product to ship AI features'
         ],
-        skills: ['Python', 'TensorFlow', 'PyTorch', 'NLP', 'Deep Learning', 'Scikit-learn'],
-        salary: '$140,000 - $180,000',
+        skills: ['Python', 'LangChain', 'Vector DBs', 'Embeddings', 'OpenAI', 'Gemini', 'RAG'],
+        salary: '₹20L – ₹35L / year',
         experienceLevel: 'Mid to Senior',
         posted: new Date(),
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       },
       {
-        title: 'Product Designer (UI/UX)',
+        title: 'Product Designer (UI/UX + Design Systems)',
         department: 'Design',
         location: 'Remote',
         type: 'Full-Time',
-        description: 'Create beautiful, intuitive user experiences for our AI-powered products. You will work closely with product managers and engineers to design interfaces that delight users.',
+        description: 'Design delightful product experiences. You’ll own flows, craft reusable components, and work closely with engineering to ensure high‑quality builds.',
         requirements: [
-          '4+ years of UI/UX design experience',
-          'Strong portfolio demonstrating design skills',
-          'Proficiency in Figma, Adobe XD, or Sketch',
-          'Understanding of user research and testing methodologies',
-          'Experience with design systems'
+          '3+ years in product design',
+          'Strong Figma skills and design systems experience',
+          'Comfort with research, prototyping, and usability testing'
         ],
         responsibilities: [
-          'Design user interfaces for web and mobile applications',
-          'Conduct user research and usability testing',
-          'Create wireframes, prototypes, and high-fidelity mockups',
-          'Maintain and evolve design system',
-          'Collaborate with developers on implementation'
+          'Own end‑to‑end user flows and UI polish',
+          'Build and maintain our design system',
+          'Run lightweight research and usability tests'
         ],
-        skills: ['Figma', 'UI Design', 'UX Research', 'Prototyping', 'Design Systems', 'User Testing'],
-        salary: '$100,000 - $140,000',
-        experienceLevel: 'Mid to Senior',
+        skills: ['Figma', 'Prototyping', 'Design Systems', 'User Research', 'Accessibility'],
+        salary: '₹12L – ₹22L / year',
+        experienceLevel: 'Mid-Level',
         posted: new Date(),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000)
       },
       {
-        title: 'DevOps Engineer',
-        department: 'Infrastructure',
+        title: 'DevOps Engineer (Kubernetes + CI/CD)',
+        department: 'Platform',
         location: 'Remote',
         type: 'Full-Time',
-        description: 'Build and maintain our cloud infrastructure, ensuring high availability, security, and performance. Work with modern DevOps tools and practices.',
+        description: 'Scale our infrastructure with reliability and speed. You’ll automate deployments, observability, and security best practices.',
         requirements: [
-          '3+ years of DevOps experience',
-          'Strong knowledge of AWS/Azure/GCP',
-          'Experience with Kubernetes and Docker',
-          'Proficiency in CI/CD pipelines',
-          'Understanding of infrastructure as code (Terraform, CloudFormation)'
+          '3+ years with cloud infra (AWS/GCP/Azure)',
+          'Kubernetes, Docker, Terraform expertise',
+          'Experience with CI/CD and monitoring'
         ],
         responsibilities: [
-          'Manage cloud infrastructure and deployments',
-          'Implement and maintain CI/CD pipelines',
-          'Monitor system performance and reliability',
-          'Automate operational tasks',
-          'Ensure security and compliance'
+          'Own CI/CD pipelines and release hygiene',
+          'Improve reliability, security, and cost',
+          'Set up observability and incident response'
         ],
-        skills: ['Kubernetes', 'Docker', 'AWS', 'Terraform', 'Jenkins', 'Python', 'Bash'],
-        salary: '$110,000 - $150,000',
+        skills: ['Kubernetes', 'Docker', 'Terraform', 'AWS', 'Github Actions', 'Prometheus', 'Grafana'],
+        salary: '₹18L – ₹30L / year',
         experienceLevel: 'Mid-Level',
         posted: new Date(),
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       },
       {
-        title: 'Frontend Developer',
-        department: 'Engineering',
-        location: 'Remote',
-        type: 'Full-Time',
-        description: 'Build beautiful, responsive web applications using React and modern frontend technologies. Create seamless user experiences across all devices.',
-        requirements: [
-          '3+ years of frontend development experience',
-          'Expert knowledge of React and JavaScript/TypeScript',
-          'Strong CSS skills and responsive design',
-          'Experience with state management (Redux, Context API)',
-          'Understanding of web performance optimization'
-        ],
-        responsibilities: [
-          'Develop responsive web applications',
-          'Implement pixel-perfect designs',
-          'Optimize application performance',
-          'Write unit and integration tests',
-          'Collaborate with designers and backend developers'
-        ],
-        skills: ['React', 'TypeScript', 'CSS', 'Redux', 'Next.js', 'Tailwind CSS'],
-        salary: '$90,000 - $130,000',
-        experienceLevel: 'Mid-Level',
-        posted: new Date(),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      },
-      {
-        title: 'Technical Content Writer',
+        title: 'Growth Marketer (B2B SaaS)',
         department: 'Marketing',
-        location: 'Remote',
+        location: 'Hybrid – Bengaluru',
         type: 'Full-Time',
-        description: 'Create engaging technical content including blog posts, tutorials, documentation, and case studies. Help developers understand and use our AI-powered tools.',
+        description: 'Own top‑of‑funnel growth. Run experiments across content, paid, and product‑led loops. Obsess over conversion and attribution.',
         requirements: [
-          '2+ years of technical writing experience',
-          'Strong understanding of software development',
-          'Excellent writing and communication skills',
-          'Experience with developer documentation',
-          'Familiarity with AI/ML concepts'
+          '2+ years in B2B SaaS growth/marketing',
+          'Hands‑on with analytics and campaign tools',
+          'Proven track record of running growth experiments'
         ],
         responsibilities: [
-          'Write technical blog posts and tutorials',
-          'Create and maintain product documentation',
-          'Develop case studies and white papers',
-          'Collaborate with engineering and product teams',
-          'Optimize content for SEO'
+          'Run multi‑channel acquisition experiments',
+          'Collaborate with product on PLG motions',
+          'Build dashboards and report on ROI'
         ],
-        skills: ['Technical Writing', 'Documentation', 'SEO', 'Markdown', 'Git', 'APIs'],
-        salary: '$70,000 - $95,000',
+        skills: ['SEO', 'Content', 'Paid Ads', 'Email', 'GA4', 'HubSpot'],
+        salary: '₹10L – ₹18L / year + incentives',
         experienceLevel: 'Mid-Level',
         posted: new Date(),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+      },
+      {
+        title: 'QA Automation Engineer',
+        department: 'Quality',
+        location: 'Remote',
+        type: 'Full-Time',
+        description: 'Build robust automated test suites for web and API layers. Improve release confidence and developer velocity.',
+        requirements: [
+          '2+ years in test automation',
+          'Experience with Playwright/Cypress and API testing',
+          'Good understanding of CI pipelines'
+        ],
+        responsibilities: [
+          'Design and maintain automated test suites',
+          'Own regression and smoke testing coverage',
+          'Work with engineers to prevent regressions'
+        ],
+        skills: ['Playwright', 'Cypress', 'Jest', 'Postman', 'REST'],
+        salary: '₹9L – ₹16L / year',
+        experienceLevel: 'Mid-Level',
+        posted: new Date(),
+        deadline: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000)
       }
     ];
 

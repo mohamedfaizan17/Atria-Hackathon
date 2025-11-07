@@ -37,102 +37,147 @@ if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-ap
 }
 
 // Extract text from uploaded resume file
-router.post('/extract-text', upload.single('resume'), async (req, res) => {
+router.post('/extract-text', upload.single('resume'), async (req, res, next) => {
+  console.log('\n🔍 === FILE UPLOAD REQUEST STARTED ===');
+  
   try {
-    console.log('🔍 File upload request received');
-    
+    // Validate file exists
     if (!req.file) {
       console.error('❌ No file in request');
-      return res.status(400).json({
+      const errorResponse = {
         success: false,
         error: 'No file uploaded'
-      });
+      };
+      console.log('📤 Sending error response:', errorResponse);
+      return res.status(400).json(errorResponse);
     }
 
     console.log('📄 File received:', {
       name: req.file.originalname,
       type: req.file.mimetype,
-      size: req.file.size
+      size: req.file.size,
+      bufferLength: req.file.buffer.length
     });
 
     let extractedText = '';
+    let extractionMethod = '';
 
     // Handle different file types
     if (req.file.mimetype === 'text/plain') {
       // Plain text file
       console.log('📝 Processing TXT file...');
+      extractionMethod = 'TXT';
       extractedText = req.file.buffer.toString('utf-8');
-      console.log('✅ TXT extraction complete');
+      console.log('✅ TXT extraction complete:', extractedText.length, 'characters');
       
     } else if (req.file.mimetype === 'application/pdf') {
       // PDF file - use pdf-parse v1.1.1
       console.log('📕 Processing PDF file...');
+      extractionMethod = 'PDF';
       console.log('📊 File size:', Math.round(req.file.buffer.length / 1024), 'KB');
       
       try {
+        console.log('🔧 Calling pdfParse function...');
         const data = await pdfParse(req.file.buffer);
-        extractedText = data.text;
+        console.log('🔧 pdfParse returned, extracting text...');
+        extractedText = data.text || '';
         console.log('✅ PDF extraction complete:', extractedText.length, 'characters');
         console.log('📄 PDF info - Pages:', data.numpages, '| Version:', data.info?.PDFFormatVersion);
       } catch (pdfError) {
         console.error('❌ PDF parsing error:', pdfError.message);
-        return res.status(400).json({
+        console.error('❌ PDF error stack:', pdfError.stack);
+        const errorResponse = {
           success: false,
           error: 'Could not parse PDF file. It may be corrupted, password-protected, or image-only.',
           details: pdfError.message
-        });
+        };
+        console.log('📤 Sending PDF error response:', errorResponse);
+        return res.status(400).json(errorResponse);
       }
       
     } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       // DOCX file - use mammoth
       console.log('📘 Processing DOCX file...');
+      extractionMethod = 'DOCX';
       try {
         const result = await mammoth.extractRawText({ buffer: req.file.buffer });
-        extractedText = result.value;
-        console.log('✅ DOCX extraction complete');
+        extractedText = result.value || '';
+        console.log('✅ DOCX extraction complete:', extractedText.length, 'characters');
       } catch (docxError) {
         console.error('❌ DOCX parsing error:', docxError.message);
-        return res.status(400).json({
+        const errorResponse = {
           success: false,
           error: 'Could not parse DOCX file. It may be corrupted.',
           details: docxError.message
-        });
+        };
+        console.log('📤 Sending DOCX error response:', errorResponse);
+        return res.status(400).json(errorResponse);
       }
       
     } else {
       console.error('❌ Unsupported file type:', req.file.mimetype);
-      return res.status(400).json({
+      const errorResponse = {
         success: false,
         error: `Unsupported file type: ${req.file.mimetype}. Please upload PDF, DOCX, or TXT file.`
-      });
+      };
+      console.log('📤 Sending unsupported type error:', errorResponse);
+      return res.status(400).json(errorResponse);
     }
 
+    // Validate extracted text
     if (!extractedText || extractedText.trim().length === 0) {
-      console.error('❌ No text extracted from file');
-      return res.status(400).json({
+      console.error('❌ No text extracted from file (empty or whitespace only)');
+      const errorResponse = {
         success: false,
         error: 'Could not extract text from file. The file may be empty or contain only images.'
-      });
+      };
+      console.log('📤 Sending empty text error:', errorResponse);
+      return res.status(400).json(errorResponse);
     }
 
-    console.log(`✅ Text extracted successfully: ${extractedText.length} characters`);
+    console.log(`✅ Text extracted successfully: ${extractedText.length} characters using ${extractionMethod}`);
 
-    res.json({
+    // Build success response
+    const successResponse = {
       success: true,
       text: extractedText,
       filename: req.file.originalname,
       size: req.file.size,
-      characterCount: extractedText.length
-    });
+      characterCount: extractedText.length,
+      method: extractionMethod
+    };
+    
+    console.log('📤 Preparing success response:');
+    console.log('  - success:', successResponse.success);
+    console.log('  - filename:', successResponse.filename);
+    console.log('  - characterCount:', successResponse.characterCount);
+    console.log('  - method:', successResponse.method);
+    console.log('  - text preview:', extractedText.substring(0, 100) + '...');
+
+    // Send response with explicit headers
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(200);
+    res.json(successResponse);
+    
+    console.log('✅ === RESPONSE SENT SUCCESSFULLY ===\n');
+    return;
+    
   } catch (error) {
-    console.error('❌ Text extraction error:', error);
+    console.error('\n❌ === UNEXPECTED ERROR IN ROUTE ===');
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    res.status(500).json({
+    
+    const errorResponse = {
       success: false,
       error: 'Failed to extract text from file',
       message: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    };
+    
+    console.log('📤 Sending 500 error response:', errorResponse);
+    res.status(500).json(errorResponse);
+    console.log('❌ === ERROR RESPONSE SENT ===\n');
+    return;
   }
 });
 
