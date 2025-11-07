@@ -1,0 +1,52 @@
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║     🔑 HOW TO GET YOUR FREE GEMINI API KEY                ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+STEP 1: Go to this website
+👉 https://makersuite.google.com/app/apikey
+
+STEP 2: Sign in with your Google account
+   - Use any Gmail account
+   - It's completely FREE!
+
+STEP 3: Click "Create API Key"
+   - Click the blue button
+   - Your key will be generated instantly
+
+STEP 4: Copy the API key
+   - It looks like: AIzaSyC...
+   - Copy the entire key
+
+STEP 5: Paste in backend/.env file
+   - Open: backend/.env
+   - Find line: GEMINI_API_KEY=
+   - Paste your key after the =
+   - Save the file
+
+EXAMPLE:
+GEMINI_API_KEY=AIzaSyC1234567890abcdefghijklmnop
+
+
+╔════════════════════════════════════════════════════════════╗
+║  📍 WHERE TO PASTE THE API KEY                            ║
+╚════════════════════════════════════════════════════════════╝
+
+File Location: backend/.env
+
+Line to edit:
+GEMINI_API_KEY=paste-your-key-here
+
+After pasting, it should look like:
+GEMINI_API_KEY=AIzaSyC1234567890abcdefghijklmnop
+
+
+╔════════════════════════════════════════════════════════════╗
+║  ✅ THAT'S IT! You're ready to go!                        ║
+╚════════════════════════════════════════════════════════════╝
+
+Run: start-servers.bat to launch the website!
+
+
+Need help? The API key is FREE and takes 30 seconds to get!
