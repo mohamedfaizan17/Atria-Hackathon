@@ -41,6 +41,9 @@ app.use('/api/suggestions', require('./routes/aiSuggestions'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/ats', require('./routes/ats'));
+app.use('/api/resume-score', require('./routes/resumeScore'));
+app.use('/api/smart-analysis', require('./routes/smartAnalysis'));
 
 // Health check
 app.get('/api/health', (req, res) => {

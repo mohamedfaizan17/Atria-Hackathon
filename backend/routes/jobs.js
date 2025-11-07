@@ -252,7 +252,20 @@ router.get('/:id', async (req, res) => {
 // Submit application with AI-generated email
 router.post('/:id/apply', async (req, res) => {
   try {
-    const { name, email, phone, coverLetter, resumeUrl } = req.body;
+    const { 
+      name, 
+      email, 
+      phone, 
+      coverLetter, 
+      resumeUrl,
+      linkedin,
+      portfolio,
+      currentLocation,
+      yearsOfExperience,
+      expectedSalary,
+      noticePeriod,
+      whyJoin
+    } = req.body;
     const jobId = req.params.id;
 
     // Validate required fields
@@ -266,7 +279,7 @@ router.post('/:id/apply', async (req, res) => {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    // Create application
+    // Create application with all fields
     const application = new Application({
       job: jobId,
       name,
@@ -274,11 +287,45 @@ router.post('/:id/apply', async (req, res) => {
       phone,
       coverLetter,
       resumeUrl,
-      status: 'submitted',
-      submittedAt: new Date()
+      linkedin,
+      portfolio,
+      currentLocation,
+      yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : undefined,
+      expectedSalary,
+      noticePeriod,
+      whyJoin,
+      status: 'applied', // Updated to match new model
+      submittedAt: new Date(),
+      source: 'website'
     });
 
-    await application.save();
+    try {
+      await application.save();
+      console.log('✅ Application saved successfully:', application._id);
+    } catch (saveError) {
+      console.error('❌ Error saving application:', saveError);
+      return res.status(500).json({ 
+        message: 'Failed to save application', 
+        error: saveError.message,
+        details: process.env.NODE_ENV === 'development' ? saveError : undefined
+      });
+    }
+
+    // Automatically score the application using AI/rule-based system
+    try {
+      console.log('🔍 Auto-scoring application...');
+      const scoredApp = await autoScoreApplication(application, job);
+      if (scoredApp) {
+        application.atsScore = scoredApp.atsScore;
+        application.skillsMatch = scoredApp.skillsMatch;
+        application.experienceMatch = scoredApp.experienceMatch;
+        await application.save();
+        console.log(`✅ Auto-scored: ATS ${application.atsScore}/100, Skills ${application.skillsMatch}/100, Experience ${application.experienceMatch}/100`);
+      }
+    } catch (scoringError) {
+      console.warn('⚠️  Auto-scoring failed:', scoringError.message);
+      // Continue anyway - scoring is not critical for submission
+    }
 
     // Generate AI-powered acknowledgment email with application summary
     let emailContent;
@@ -534,5 +581,149 @@ router.get('/:id/applications', async (req, res) => {
     res.status(500).json({ message: 'Error fetching applications', error: error.message });
   }
 });
+
+// Auto-scoring function for new applications
+async function autoScoreApplication(application, job) {
+  try {
+    let atsScore = 0;
+    let skillsMatch = 0;
+    let experienceMatch = 0;
+
+    // Try AI scoring if available
+    if (genAI) {
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        
+        const candidateProfile = `
+Name: ${application.name}
+Location: ${application.currentLocation || 'Not specified'}
+Years of Experience: ${application.yearsOfExperience || 'Not specified'}
+LinkedIn: ${application.linkedin || 'Not provided'}
+Portfolio: ${application.portfolio || 'Not provided'}
+Cover Letter: ${application.coverLetter?.substring(0, 300) || 'Not provided'}
+Why Join: ${application.whyJoin?.substring(0, 200) || 'Not provided'}
+        `.trim();
+
+        const jobInfo = `
+Title: ${job.title}
+Department: ${job.department}
+Required Skills: ${job.skills?.join(', ') || 'Not specified'}
+Experience Level: ${job.experienceLevel || 'Not specified'}
+Requirements: ${job.requirements?.slice(0, 3).join('; ') || 'Not specified'}
+        `.trim();
+
+        const prompt = `You are an ATS system. Score this candidate (0-100 for each):
+
+JOB:
+${jobInfo}
+
+CANDIDATE:
+${candidateProfile}
+
+Respond ONLY with JSON (no other text):
+{"atsScore": X, "skillsMatch": Y, "experienceMatch": Z}`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        const jsonMatch = text.match(/\{[^}]+\}/);
+        if (jsonMatch) {
+          const scores = JSON.parse(jsonMatch[0]);
+          atsScore = Math.round(scores.atsScore || 0);
+          skillsMatch = Math.round(scores.skillsMatch || 0);
+          experienceMatch = Math.round(scores.experienceMatch || 0);
+        } else {
+          throw new Error('Invalid AI response format');
+        }
+      } catch (aiError) {
+        console.log('⚠️  AI scoring failed, using rule-based:', aiError.message);
+        // Fall back to rule-based
+        const ruleScore = calculateRuleBasedScore(application);
+        atsScore = ruleScore.atsScore;
+        skillsMatch = ruleScore.skillsMatch;
+        experienceMatch = ruleScore.experienceMatch;
+      }
+    } else {
+      // Use rule-based scoring
+      const ruleScore = calculateRuleBasedScore(application);
+      atsScore = ruleScore.atsScore;
+      skillsMatch = ruleScore.skillsMatch;
+      experienceMatch = ruleScore.experienceMatch;
+    }
+
+    return {
+      atsScore: Math.min(100, Math.max(0, atsScore)),
+      skillsMatch: Math.min(100, Math.max(0, skillsMatch)),
+      experienceMatch: Math.min(100, Math.max(0, experienceMatch))
+    };
+  } catch (error) {
+    console.error('Auto-scoring error:', error);
+    return null;
+  }
+}
+
+// Rule-based scoring algorithm
+function calculateRuleBasedScore(application) {
+  let atsScore = 0;
+  let skillsMatch = 0;
+  let experienceMatch = 0;
+  
+  // ATS Score components
+  if (application.resumeUrl) atsScore += 15;
+  if (application.linkedin) atsScore += 10;
+  if (application.portfolio) atsScore += 10;
+  
+  if (application.coverLetter) {
+    const len = application.coverLetter.length;
+    atsScore += len > 500 ? 20 : len > 200 ? 15 : len > 50 ? 10 : 5;
+  }
+  
+  if (application.whyJoin) {
+    const len = application.whyJoin.length;
+    atsScore += len > 200 ? 15 : len > 100 ? 10 : len > 30 ? 5 : 0;
+  }
+  
+  if (application.yearsOfExperience) {
+    const years = parseInt(application.yearsOfExperience);
+    atsScore += years >= 8 ? 20 : years >= 5 ? 15 : years >= 3 ? 10 : years >= 1 ? 5 : 0;
+  }
+  
+  // Profile completeness
+  if (application.currentLocation) atsScore += 2.5;
+  if (application.expectedSalary) atsScore += 2.5;
+  if (application.noticePeriod) atsScore += 2.5;
+  if (application.email) atsScore += 2.5;
+  
+  // Skills Match
+  if (application.linkedin) skillsMatch += 30;
+  if (application.portfolio) skillsMatch += 25;
+  if (application.resumeUrl) skillsMatch += 20;
+  
+  if (application.coverLetter) {
+    const techKeywords = ['javascript', 'python', 'java', 'react', 'node', 'typescript', 
+                          'mongodb', 'sql', 'aws', 'docker', 'api', 'git'];
+    const found = techKeywords.filter(k => application.coverLetter.toLowerCase().includes(k));
+    skillsMatch += Math.min(25, found.length * 5);
+  }
+  
+  // Experience Match
+  if (application.yearsOfExperience) {
+    const years = parseInt(application.yearsOfExperience);
+    experienceMatch += 40;
+    experienceMatch += years >= 10 ? 40 : years >= 7 ? 35 : years >= 5 ? 30 : 
+                       years >= 3 ? 25 : years >= 1 ? 20 : 10;
+    if (application.linkedin) experienceMatch += 10;
+    if (application.coverLetter?.length > 200) experienceMatch += 10;
+  } else {
+    experienceMatch = 40;
+  }
+  
+  return {
+    atsScore: Math.min(100, Math.round(atsScore)),
+    skillsMatch: Math.min(100, Math.round(skillsMatch)),
+    experienceMatch: Math.min(100, Math.round(experienceMatch))
+  };
+}
 
 module.exports = router;
