@@ -137,11 +137,13 @@ const AdminBlog = () => {
 
     try {
       if (editingBlog) {
-        await blogAPI.updateBlog(editingBlog._id, formData);
+        await blogAPI.updateBlog(editingBlog.id, formData);
         toast.success('Blog updated successfully!');
       } else {
-        await blogAPI.createBlog(formData);
-        toast.success('Blog created successfully!');
+        // Add generateAI flag for new blogs
+        const createData = { ...formData, generateAI: true };
+        await blogAPI.createBlog(createData);
+        toast.success('Blog created successfully with AI-generated content!');
       }
       
       fetchBlogs();
@@ -174,6 +176,7 @@ const AdminBlog = () => {
       toast.success('Blog deleted successfully');
       fetchBlogs();
     } catch (error) {
+      console.error('Delete error:', error);
       toast.error('Failed to delete blog');
     }
   };
@@ -283,7 +286,7 @@ const AdminBlog = () => {
           <div className="grid grid-cols-1 gap-6">
             {filteredBlogs.map((blog) => (
               <motion.div
-                key={blog._id}
+                key={blog.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="card"
@@ -358,7 +361,7 @@ const AdminBlog = () => {
                         <span>Edit</span>
                       </button>
                       <button
-                        onClick={() => handleDelete(blog._id)}
+                        onClick={() => handleDelete(blog.id)}
                         className="btn-outline text-sm py-2 text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-1"
                       >
                         <Trash2 className="w-4 h-4" />

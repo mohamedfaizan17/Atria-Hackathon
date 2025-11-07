@@ -35,7 +35,7 @@ const BlogPost = () => {
     if (liked || !blog) return;
     
     try {
-      await blogAPI.likeBlog(blog._id);
+      await blogAPI.likeBlog(blog.id);
       setBlog({ ...blog, likes: blog.likes + 1 });
       setLiked(true);
       toast.success('Thanks for liking!');
@@ -52,9 +52,7 @@ const BlogPost = () => {
 
     setGeneratingSummary(true);
     try {
-      const response = await blogAPI.generateSummary({
-        content: blog.content,
-        title: blog.title,
+      const response = await blogAPI.generateSummary(blog.id, {
         length: 'medium'
       });
       setAiSummary(response.data.summary);
