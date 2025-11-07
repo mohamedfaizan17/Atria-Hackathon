@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, MapPin, Clock, DollarSign, X, Upload, FileText, Target, Sparkles } from 'lucide-react';
+import { Briefcase, MapPin, Clock, DollarSign, X, Upload, FileText, Target, Sparkles, CheckCircle } from 'lucide-react';
 import { jobsAPI } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAnalytics } from '../hooks/useAnalytics';
 
 const Careers = () => {
   const { trackConversion } = useAnalytics();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -28,10 +29,53 @@ const Careers = () => {
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [fromResumeBuilder, setFromResumeBuilder] = useState(false);
 
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    const loadJobsAndResume = async () => {
+      await fetchJobs();
+      
+      // Check if coming from resume builder
+      const applyJobId = searchParams.get('apply');
+      const savedResumeData = localStorage.getItem('applyResumeData');
+      
+      if (applyJobId && savedResumeData) {
+        try {
+          const resumeData = JSON.parse(savedResumeData);
+          
+          // Pre-fill application data from resume
+          setApplicationData(prev => ({
+            ...prev,
+            name: resumeData.personalInfo?.name || '',
+            email: resumeData.personalInfo?.email || '',
+            phone: resumeData.personalInfo?.phone || '',
+            linkedin: resumeData.personalInfo?.linkedin || '',
+            portfolio: resumeData.personalInfo?.portfolio || '',
+            currentLocation: resumeData.personalInfo?.location || '',
+            coverLetter: resumeData.summary || ''
+          }));
+          
+          setFromResumeBuilder(true);
+          
+          // Find and open the job application modal
+          const response = await jobsAPI.getJobs();
+          const job = response.data.find(j => j._id === applyJobId);
+          if (job) {
+            setSelectedJob(job);
+            setShowApplicationModal(true);
+            toast.success('Resume data loaded! Please review and submit.');
+          }
+          
+          // Clear the saved data
+          localStorage.removeItem('applyResumeData');
+        } catch (error) {
+          console.error('Error loading resume data:', error);
+        }
+      }
+    };
+    
+    loadJobsAndResume();
+  }, [searchParams]);
 
   const fetchJobs = async () => {
     try {
@@ -582,6 +626,18 @@ LINKS:
                   <X className="w-6 h-6" />
                 </button>
               </div>
+
+              {fromResumeBuilder && (
+                <div className="mx-6 mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-green-900 dark:text-green-100">Resume Data Loaded</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Your information from Resume Builder has been pre-filled. Please review and complete any remaining fields.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleSubmitApplication} className="p-6 space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">

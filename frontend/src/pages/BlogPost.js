@@ -52,12 +52,14 @@ const BlogPost = () => {
 
     setGeneratingSummary(true);
     try {
-      const response = await aiAPI.summarize({
-        text: blog.content,
+      const response = await blogAPI.generateSummary({
+        content: blog.content,
+        title: blog.title,
         length: 'medium'
       });
-      setAiSummary(response.data.data.summary);
+      setAiSummary(response.data.summary);
       setShowAISummary(true);
+      toast.success('AI summary generated!');
     } catch (error) {
       toast.error('Failed to generate summary');
     } finally {

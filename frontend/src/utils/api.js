@@ -101,6 +101,8 @@ export const blogAPI = {
   updateBlog: (id, data) => api.put(`/blog/${id}`, data),
   deleteBlog: (id) => api.delete(`/blog/${id}`),
   likeBlog: (id) => api.post(`/blog/${id}/like`),
+  generateSummary: (data) => api.post('/blog/generate-summary', data),
+  generateSEO: (data) => api.post('/blog/generate-seo', data),
 };
 
 // Content Services

@@ -21,8 +21,14 @@ import Careers from './pages/Careers';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminApplications from './pages/AdminApplications';
+import AdminBlog from './pages/AdminBlog';
 import ResumeBuilder from './pages/ResumeBuilder';
+import EnhancedResumeBuilder from './pages/EnhancedResumeBuilder';
 import ResumeScore from './pages/ResumeScore';
+import ResumeHub from './pages/ResumeHub';
+import ResumeTemplates from './pages/ResumeTemplates';
+import SmartSuggestionsDemo from './pages/SmartSuggestionsDemo';
 
 // Analytics Wrapper
 const AnalyticsWrapper = ({ children }) => {
@@ -47,8 +53,14 @@ function App() {
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/careers" element={<Careers />} />
-                  <Route path="/resume-builder" element={<ResumeBuilder />} />
+                  <Route path="/resume" element={<ResumeHub />} />
+                  <Route path="/resume-templates" element={<ResumeTemplates />} />
+                  <Route path="/resume-builder" element={<EnhancedResumeBuilder />} />
+                  <Route path="/resume-builder-simple" element={<ResumeBuilder />} />
                   <Route path="/resume-score" element={<ResumeScore />} />
+                  <Route path="/smart-suggestions" element={<SmartSuggestionsDemo />} />
+                  <Route path="/admin/applications" element={<AdminApplications />} />
+                  <Route path="/admin/blog" element={<AdminBlog />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin/*" element={<AdminDashboard />} />

@@ -5,27 +5,51 @@ const Application = require('../models/Application');
 const nodemailer = require('nodemailer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Configure email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+// Initialize Gemini AI (optional)
+let genAI = null;
+if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here') {
+  try {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    console.log('✅ Gemini AI initialized for personalized emails');
+  } catch (error) {
+    console.warn('⚠️  Gemini AI initialization failed - using fallback email templates');
   }
-});
+} else {
+  console.warn('⚠️  Gemini API not configured - using standard email templates');
+}
 
-// Verify transporter configuration
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('❌ Email transporter error:', error);
-    console.error('Email credentials may not be configured correctly');
-  } else {
-    console.log('✅ Email server is ready to send messages');
-  }
-});
+// Configure email transporter (optional - only if credentials provided)
+let transporter = null;
+let emailConfigured = false;
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS && 
+    process.env.EMAIL_USER !== 'your-email@gmail.com' &&
+    process.env.EMAIL_PASS !== 'your-app-specific-password') {
+  
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  // Verify transporter configuration
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('❌ Email transporter error:', error.message);
+      console.warn('⚠️  Email notifications disabled - configure EMAIL_USER and EMAIL_PASS in .env to enable');
+      emailConfigured = false;
+      transporter = null;
+    } else {
+      console.log('✅ Email server is ready to send messages');
+      emailConfigured = true;
+    }
+  });
+} else {
+  console.warn('⚠️  Email not configured - applications will be saved but no email notifications will be sent');
+  console.log('💡 To enable emails: Add EMAIL_USER and EMAIL_PASS to backend/.env');
+}
 
 // Seed dummy jobs
 router.post('/seed', async (req, res) => {
@@ -260,11 +284,13 @@ router.post('/:id/apply', async (req, res) => {
     let emailContent;
     let applicationSummary = '';
     
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
-      // Prepare application details for AI
-      const applicationDetails = `
+    // Try AI generation if available
+    if (genAI) {
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        
+        // Prepare application details for AI
+        const applicationDetails = `
 Applicant: ${name}
 Email: ${email}
 Phone: ${phone}
@@ -273,9 +299,9 @@ Department: ${job.department}
 Location: ${job.location}
 Application Details:
 ${coverLetter}
-      `.trim();
+        `.trim();
 
-      const prompt = `You are an HR representative at Mastersolis, a leading tech company. Generate a professional, warm, and personalized job application acknowledgment email for ${name} who just applied for the ${job.title} position.
+        const prompt = `You are an HR representative at Mastersolis, a leading tech company. Generate a professional, warm, and personalized job application acknowledgment email for ${name} who just applied for the ${job.title} position.
 
 APPLICATION CONTEXT:
 ${applicationDetails}
@@ -296,13 +322,20 @@ AVOID: Generic templates, overly formal language, or robotic responses
 
 Generate the email body only (no subject line):`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      emailContent = response.text();
-      
-      console.log('✅ AI-generated personalized email');
-    } catch (aiError) {
-      console.error('AI generation error, using enhanced fallback:', aiError);
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        emailContent = response.text();
+        
+        console.log('✅ AI-generated personalized email');
+      } catch (aiError) {
+        console.log('⚠️  AI generation failed, using standard template:', aiError.message);
+        emailContent = null;
+      }
+    }
+    
+    // Use fallback template if AI didn't generate content
+    if (!emailContent) {
+      console.log('ℹ️  Using standard email template');
       
       // Enhanced fallback with application details
       emailContent = `Dear ${name},
@@ -448,22 +481,25 @@ This is an automated confirmation. Your application has been securely stored and
       `
     };
 
-    // Send email (don't fail application if email fails)
+    // Send email (only if email is configured)
     let emailSent = false;
-    try {
-      console.log(`📧 Attempting to send email to ${email}...`);
-      console.log(`Email from: ${process.env.EMAIL_USER}`);
-      
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✅ Confirmation email sent successfully to ${email}`);
-      console.log(`Message ID: ${info.messageId}`);
-      emailSent = true;
-    } catch (emailError) {
-      console.error('❌ Email sending error:', emailError.message);
-      console.error('Full error:', emailError);
-      console.error('⚠️ Note: Application was saved to database, but email failed to send');
-      console.error('💡 To fix email: Configure EMAIL_USER and EMAIL_PASS in .env file');
-      // Continue anyway - application is saved
+    if (transporter) {
+      try {
+        console.log(`📧 Attempting to send email to ${email}...`);
+        console.log(`Email from: ${process.env.EMAIL_USER}`);
+        
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Confirmation email sent successfully to ${email}`);
+        console.log(`Message ID: ${info.messageId}`);
+        emailSent = true;
+      } catch (emailError) {
+        console.error('❌ Email sending error:', emailError.message);
+        console.error('⚠️ Note: Application was saved to database, but email failed to send');
+        // Continue anyway - application is saved
+      }
+    } else {
+      console.log('ℹ️  Email not configured - skipping email notification');
+      console.log('💡 Application saved successfully. To enable emails, configure EMAIL_USER and EMAIL_PASS in .env');
     }
 
     res.json({

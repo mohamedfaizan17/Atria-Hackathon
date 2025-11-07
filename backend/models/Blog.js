@@ -18,6 +18,10 @@ const blogSchema = new mongoose.Schema({
   summary: {
     type: String
   },
+  seoDescription: {
+    type: String,
+    maxlength: 160
+  },
   aiGeneratedSummary: {
     type: String
   },
