@@ -32,16 +32,18 @@ app.use('/api/', limiter);
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-// TODO: Convert remaining controllers from Mongoose to Prisma
-// app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/content', require('./routes/content'));
-// app.use('/api/ai', require('./routes/ai'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/content', require('./routes/content'));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api/career', require('./routes/career')); // ✅ Converted to Prisma + SQLite
-// app.use('/api/jobs', require('./routes/jobs'));
-// app.use('/api/suggestions', require('./routes/aiSuggestions'));
-// app.use('/api/contact', require('./routes/contact'));
+app.use('/api/jobs', require('./routes/jobs'));
+app.use('/api/suggestions', require('./routes/aiSuggestions'));
+app.use('/api/contact', require('./routes/contact'));
 app.use('/api/blog', require('./routes/blog')); // ✅ Converted to Prisma + AI Features
-// app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/ats', require('./routes/ats'));
+app.use('/api/resume-score', require('./routes/resumeScore'));
+app.use('/api/smart-analysis', require('./routes/smartAnalysis'));
 
 // Health check
 app.get('/api/health', (req, res) => {

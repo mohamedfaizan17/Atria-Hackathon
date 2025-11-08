@@ -23,6 +23,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminApplications from './pages/AdminApplications';
 import AdminBlog from './pages/AdminBlog';
+import ATS from './pages/ATS';
 import ResumeBuilder from './pages/ResumeBuilder';
 import EnhancedResumeBuilder from './pages/EnhancedResumeBuilder';
 import ResumeScore from './pages/ResumeScore';
@@ -38,7 +39,7 @@ const AnalyticsWrapper = ({ children }) => {
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeProvider>
         <AuthProvider>
           <AnalyticsWrapper>
@@ -61,6 +62,7 @@ function App() {
                   <Route path="/smart-suggestions" element={<SmartSuggestionsDemo />} />
                   <Route path="/admin/applications" element={<AdminApplications />} />
                   <Route path="/admin/blog" element={<AdminBlog />} />
+                  <Route path="/admin/ats" element={<ATS />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin/*" element={<AdminDashboard />} />

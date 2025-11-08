@@ -30,14 +30,20 @@ const AdminApplications = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const jobsData = await jobsAPI.getJobs();
-      setJobs(jobsData);
+
+      // Fetch jobs
+      const jobsRes = await jobsAPI.getJobs();
+      const jobsArr = Array.isArray(jobsRes.data)
+        ? jobsRes.data
+        : (jobsRes.data?.data || jobsRes.data?.jobs || []);
+      setJobs(jobsArr);
 
       // Fetch applications for all jobs
       const allApplications = [];
-      for (const job of jobsData) {
+      for (const job of jobsArr) {
         try {
-          const jobApplications = await jobsAPI.getApplications(job._id);
+          const appsRes = await jobsAPI.getApplications(job._id);
+          const jobApplications = Array.isArray(appsRes.data) ? appsRes.data : (appsRes.data?.data || []);
           const applicationsWithJob = jobApplications.map(app => ({
             ...app,
             jobTitle: job.title,
@@ -48,7 +54,7 @@ const AdminApplications = () => {
           console.error(`Error fetching applications for ${job.title}:`, error);
         }
       }
-      
+
       setApplications(allApplications);
       setFilteredApplications(allApplications);
     } catch (error) {

@@ -159,7 +159,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Research Interests
           </h3>
           <div className="flex flex-wrap gap-2">
-            {researchInterests.map((interest, idx) => (
+            {(researchInterests || []).map((interest, idx) => (
               <span key={idx} className="text-sm text-gray-700">
                 {interest}{idx < researchInterests.length - 1 ? ' •' : ''}
               </span>
@@ -174,7 +174,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Education
           </h3>
           <div className="space-y-3">
-            {education.map((edu, idx) => (
+            {(education || []).map((edu, idx) => (
               <div key={idx}>
                 <div className="flex justify-between items-baseline">
                   <h4 className="font-bold text-gray-900">{edu.degree}</h4>
@@ -195,7 +195,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Academic Positions
           </h3>
           <div className="space-y-4">
-            {academicPositions.map((pos, idx) => (
+            {(academicPositions || []).map((pos, idx) => (
               <div key={idx}>
                 <div className="flex justify-between items-baseline mb-1">
                   <div>
@@ -206,7 +206,7 @@ const AcademicTemplate = ({ data = {} }) => {
                   <span className="text-sm text-gray-600">{pos.period}</span>
                 </div>
                 <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 ml-2">
-                  {pos.responsibilities.map((resp, i) => (
+                  {(pos.responsibilities || []).map((resp, i) => (
                     <li key={i}>{resp}</li>
                   ))}
                 </ul>
@@ -222,7 +222,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Selected Publications
           </h3>
           <div className="space-y-3">
-            {publications.map((pub, idx) => (
+            {(publications || []).map((pub, idx) => (
               <div key={idx} className="text-sm">
                 <p className="text-gray-900">
                   {pub.authors} ({pub.year}). <span className="italic">{pub.title}</span>.
@@ -242,7 +242,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Teaching Experience
           </h3>
           <div className="space-y-2">
-            {teaching.map((course, idx) => (
+            {(teaching || []).map((course, idx) => (
               <div key={idx} className="flex justify-between text-sm">
                 <div>
                   <span className="font-semibold text-gray-900">{course.course}</span>
@@ -260,7 +260,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Grants & Funding
           </h3>
           <div className="space-y-3">
-            {grants.map((grant, idx) => (
+            {(grants || []).map((grant, idx) => (
               <div key={idx} className="text-sm">
                 <div className="flex justify-between items-baseline">
                   <h4 className="font-semibold text-gray-900">{grant.title}</h4>
@@ -281,7 +281,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Awards & Honors
           </h3>
           <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-            {awards.map((award, idx) => (
+            {(awards || []).map((award, idx) => (
               <li key={idx}>{award}</li>
             ))}
           </ul>
@@ -293,7 +293,7 @@ const AcademicTemplate = ({ data = {} }) => {
             Professional Service
           </h3>
           <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-            {service.map((item, idx) => (
+            {(service || []).map((item, idx) => (
               <li key={idx}>{item}</li>
             ))}
           </ul>

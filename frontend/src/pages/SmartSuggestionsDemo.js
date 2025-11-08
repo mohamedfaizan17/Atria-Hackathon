@@ -1,46 +1,187 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Briefcase, Award, ArrowRight, Download } from 'lucide-react';
-import SmartSuggestions from '../components/SmartSuggestions';
+import { Sparkles, Upload, FileText, Target, CheckCircle, AlertTriangle, TrendingUp, Award, Download, Zap } from 'lucide-react';
+import api from '../utils/api';
+import toast from 'react-hot-toast';
 
 const SmartSuggestionsDemo = () => {
-  const [jobRole, setJobRole] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [selectedAchievements, setSelectedAchievements] = useState([]);
+  const [resumeText, setResumeText] = useState('');
+  const [resumeFile, setResumeFile] = useState(null);
+  const [jobDescription, setJobDescription] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [extracting, setExtracting] = useState(false);
 
-  const popularRoles = [
-    'Software Engineer',
-    'Product Manager',
-    'Data Scientist',
-    'Designer',
-    'Marketing Manager',
-    'Sales Executive'
-  ];
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const experienceLevels = [
-    { value: 'entry', label: 'Entry Level (0-2 years)' },
-    { value: 'mid', label: 'Mid Level (3-5 years)' },
-    { value: 'senior', label: 'Senior (5-8 years)' },
-    { value: 'lead', label: 'Lead/Principal (8+ years)' }
-  ];
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload PDF, DOCX, or TXT file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size should be less than 5MB');
+      return;
+    }
+
+    setResumeFile(file);
+    setExtracting(true);
+
+    try {
+      console.log('\n📤 === STARTING FILE UPLOAD ===');
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+
+      const formData = new FormData();
+      formData.append('resume', file);
+      console.log('✅ FormData created');
+
+      console.log('📡 Sending POST request to /smart-analysis/extract-text...');
+      const response = await api.post('/smart-analysis/extract-text', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000 // 30 second timeout
+      });
+
+      console.log('\n✅ === RESPONSE RECEIVED ===');
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      console.log('Response data type:', typeof response.data);
+      console.log('Response data:', response.data);
+
+      // Validate response structure
+      if (!response || !response.data) {
+        console.error('❌ Invalid response structure!');
+        console.error('Response:', response);
+        throw new Error('Invalid server response - no data received');
+      }
+
+      // Check for explicit failure
+      if (response.data.success === false) {
+        console.error('❌ Server explicitly returned failure');
+        console.error('Error from server:', response.data.error);
+        throw new Error(response.data.error || response.data.message || 'Server failed to process file');
+      }
+
+      // Validate text field exists
+      if (!response.data.text) {
+        console.error('❌ Response missing text field!');
+        console.error('Response data keys:', Object.keys(response.data));
+        console.error('Full response data:', JSON.stringify(response.data));
+        throw new Error('Server response missing extracted text');
+      }
+
+      // Success!
+      const extractedText = response.data.text;
+      const charCount = extractedText.length;
+      
+      console.log('✅ === EXTRACTION SUCCESSFUL ===');
+      console.log('Characters extracted:', charCount);
+      console.log('Method used:', response.data.method || 'unknown');
+      console.log('Preview:', extractedText.substring(0, 100) + '...');
+      console.log('=================================\n');
+
+      setResumeText(extractedText);
+      toast.success(`✅ Resume uploaded successfully! ${charCount} characters extracted.`, {
+        duration: 4000
+      });
+      
+    } catch (error) {
+      console.error('\n❌ === UPLOAD FAILED ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      
+      if (error.response) {
+        // Server responded with error
+        console.error('Server error response:');
+        console.error('  Status:', error.response.status);
+        console.error('  Data:', error.response.data);
+        console.error('  Headers:', error.response.headers);
+        
+        const serverError = error.response.data?.error || error.response.data?.message || 'Server error';
+        toast.error(`Upload failed: ${serverError}`, { duration: 5000 });
+        
+      } else if (error.request) {
+        // Request made but no response
+        console.error('No response from server');
+        console.error('Request:', error.request);
+        toast.error('Upload failed: No response from server. Is the backend running?', { duration: 5000 });
+        
+      } else {
+        // Error in request setup
+        console.error('Request setup error:', error.message);
+        toast.error(`Upload failed: ${error.message}`, { duration: 5000 });
+      }
+      
+      console.error('Full error object:', error);
+      console.error('================================\n');
+      
+      setResumeFile(null);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const analyzeResume = async () => {
+    if (!resumeText.trim()) {
+      toast.error('Please upload your resume or enter resume text');
+      return;
+    }
+
+    if (!jobDescription.trim()) {
+      toast.error('Please enter the job description');
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      console.log('🔍 Starting AI analysis...');
+      
+      const response = await api.post('/smart-analysis/analyze', {
+        resumeText,
+        jobDescription
+      });
+
+      console.log('✅ Analysis complete:', response.data);
+      setAnalysis(response.data.data);
+      toast.success('🎉 Analysis complete!');
+      setActiveTab('overview');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error(error.response?.data?.error || 'Analysis failed. Please try again.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const handleExport = () => {
-    const data = {
-      jobRole,
-      experienceLevel,
-      industry,
-      skills: selectedSkills,
-      achievements: selectedAchievements
-    };
+    if (!analysis) return;
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(analysis, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `suggestions-${jobRole.toLowerCase().replace(/\s+/g, '-')}.json`;
+    a.download = `resume-analysis-${Date.now()}.json`;
     a.click();
+    toast.success('Analysis exported!');
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const getScoreBgColor = (score) => {
+    if (score >= 80) return 'bg-green-50 dark:bg-green-900/20';
+    if (score >= 60) return 'bg-yellow-50 dark:bg-yellow-900/20';
+    return 'bg-red-50 dark:bg-red-900/20';
   };
 
   return (
@@ -55,18 +196,17 @@ const SmartSuggestionsDemo = () => {
             <div className="inline-flex items-center space-x-2 bg-primary-100 dark:bg-primary-900/30 px-4 py-2 rounded-full mb-6">
               <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
-                AI-Powered Career Assistant
+                AI-Powered Resume Analysis
               </span>
             </div>
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Smart Suggestions for
-              <span className="gradient-text"> Your Career</span>
+              Smart Resume<span className="gradient-text"> Analysis & Optimization</span>
             </h1>
             
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-              Get AI-powered suggestions for skills and achievements tailored to your role.
-              Build a compelling resume that stands out.
+              Upload your resume and job description for AI-powered analysis, ATS optimization, 
+              and professional formatting suggestions.
             </p>
           </motion.div>
         </div>
@@ -74,204 +214,340 @@ const SmartSuggestionsDemo = () => {
 
       {/* Main Content */}
       <section className="py-8">
-        <div className="container-custom max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Sidebar - Input Form */}
-            <div className="lg:col-span-1">
-              <div className="card sticky top-24">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Your Information
-                </h2>
-
-                {/* Job Role */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Job Role *
-                  </label>
-                  <input
-                    type="text"
-                    value={jobRole}
-                    onChange={(e) => setJobRole(e.target.value)}
-                    placeholder="e.g., Software Engineer"
-                    className="input-field"
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {popularRoles.map((role) => (
-                      <button
-                        key={role}
-                        onClick={() => setJobRole(role)}
-                        className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-primary-100 dark:hover:bg-primary-900/30 px-2 py-1 rounded transition-colors"
-                      >
-                        {role}
-                      </button>
-                    ))}
-                  </div>
+        <div className="container-custom max-w-4xl">
+          {!analysis ? (
+            <div className="space-y-6">
+              {/* Resume Upload */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card"
+              >
+                <div className="flex items-center space-x-3 mb-4">
+                  <FileText className="w-6 h-6 text-primary-600" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Upload Your Resume
+                  </h3>
                 </div>
 
-                {/* Experience Level */}
+                {/* File Upload Area */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Experience Level
-                  </label>
-                  <select
-                    value={experienceLevel}
-                    onChange={(e) => setExperienceLevel(e.target.value)}
-                    className="input-field"
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="resume-upload"
+                    disabled={extracting}
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      extracting
+                        ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed'
+                        : 'border-primary-300 dark:border-primary-600 hover:border-primary-500 dark:hover:border-primary-400 bg-primary-50 dark:bg-primary-900/10'
+                    }`}
                   >
-                    <option value="">Select level</option>
-                    {experienceLevels.map((level) => (
-                      <option key={level.value} value={level.value}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Industry */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Industry (Optional)
+                    <Upload className={`w-12 h-12 mb-3 ${extracting ? 'text-gray-400' : 'text-primary-600 dark:text-primary-400'}`} />
+                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      {extracting ? 'Extracting text...' : resumeFile ? resumeFile.name : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      PDF, DOCX, or TXT (Max 5MB)
+                    </p>
+                    {resumeFile && !extracting && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                        ✓ File uploaded successfully
+                      </p>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    value={industry}
-                    onChange={(e) => setIndustry(e.target.value)}
-                    placeholder="e.g., FinTech, Healthcare"
-                    className="input-field"
-                  />
                 </div>
 
-                {/* Stats */}
-                <div className="bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 p-4 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Skills Selected</span>
-                    <span className="font-bold text-primary-600 dark:text-primary-400">
-                      {selectedSkills.length}
-                    </span>
+                {/* Manual Text Input (Optional) */}
+                {!resumeFile && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 text-center">
+                      Or paste your resume text below
+                    </p>
+                    <textarea
+                      placeholder="Paste your resume content here...&#10;&#10;Include:&#10;- Contact Information&#10;- Work Experience&#10;- Education&#10;- Skills&#10;- Projects & Achievements"
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      rows={8}
+                      className="textarea-field font-mono text-sm"
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Achievements Selected</span>
-                    <span className="font-bold text-secondary-600 dark:text-secondary-400">
-                      {selectedAchievements.length}
-                    </span>
-                  </div>
-                </div>
+                )}
 
-                {/* Export Button */}
-                {(selectedSkills.length > 0 || selectedAchievements.length > 0) && (
+                {/* Extracted Text Preview */}
+                {resumeText && resumeFile && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Extracted Text Preview
+                      </p>
+                      <button
+                        onClick={() => {
+                          setResumeFile(null);
+                          setResumeText('');
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg max-h-40 overflow-y-auto">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-mono whitespace-pre-wrap">
+                        {resumeText.substring(0, 500)}...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {resumeText.split(/\s+/).filter(w => w).length} words
+                </p>
+              </motion.div>
+
+              {/* Job Description */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="card"
+              >
+                <div className="flex items-center space-x-3 mb-4">
+                  <Target className="w-6 h-6 text-secondary-600" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Job Description
+                  </h3>
+                </div>
+                <textarea
+                  placeholder="Paste the job description here...&#10;&#10;Include:&#10;- Required Skills&#10;- Experience Level&#10;- Responsibilities&#10;- Qualifications"
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  rows={10}
+                  className="textarea-field"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {jobDescription.split(/\s+/).filter(w => w).length} words
+                </p>
+              </motion.div>
+
+              {/* Analyze Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex justify-center"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={analyzeResume}
+                  disabled={analyzing}
+                  className="btn-primary text-lg py-4 px-12 flex items-center space-x-3 disabled:opacity-50"
+                >
+                  <Sparkles className="w-6 h-6" />
+                  <span>{analyzing ? 'Analyzing...' : 'Analyze with AI'}</span>
+                </motion.button>
+              </motion.div>
+            </div>
+          ) : (
+            /* Analysis Results */
+            <div className="space-y-6">
+              {/* Results Header */}
+              <div className="card text-center bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-900">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                  Analysis Complete!
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Your comprehensive resume analysis is ready
+                </p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => setAnalysis(null)}
+                    className="btn-outline"
+                  >
+                    Analyze Another
+                  </button>
                   <button
                     onClick={handleExport}
-                    className="btn-primary w-full mt-4 flex items-center justify-center space-x-2"
+                    className="btn-primary flex items-center space-x-2"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Export Selections</span>
+                    <span>Export Report</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Score Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Job Fit Score */}
+                <div className={`card ${getScoreBgColor(analysis.jobFit?.overallFitScore || 0)}`}>
+                  <div className="text-center">
+                    <div className={`text-4xl font-bold ${getScoreColor(analysis.jobFit?.overallFitScore || 0)} mb-2`}>
+                      {analysis.jobFit?.overallFitScore || 0}
+                    </div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Overall Job Fit
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {analysis.jobFit?.fitLevel || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills Match */}
+                <div className={`card ${getScoreBgColor(analysis.skillsMatch?.matchScore || 0)}`}>
+                  <div className="text-center">
+                    <div className={`text-4xl font-bold ${getScoreColor(analysis.skillsMatch?.matchScore || 0)} mb-2`}>
+                      {analysis.skillsMatch?.matchScore || 0}
+                    </div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Skills Match
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {analysis.skillsMatch?.matchedSkills?.length || 0} matched
+                    </div>
+                  </div>
+                </div>
+
+                {/* ATS Score */}
+                <div className={`card ${getScoreBgColor(analysis.atsOptimization?.atsScore || 0)}`}>
+                  <div className="text-center">
+                    <div className={`text-4xl font-bold ${getScoreColor(analysis.atsOptimization?.atsScore || 0)} mb-2`}>
+                      {analysis.atsOptimization?.atsScore || 0}
+                    </div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      ATS Score
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      System Compatibility
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Priorities */}
+              {analysis.recommendations?.topPriorities && (
+                <div className="card">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <AlertTriangle className="w-6 h-6 text-yellow-600" />
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Top Priority Actions
+                    </h3>
+                  </div>
+                  <ul className="space-y-3">
+                    {analysis.recommendations.topPriorities.map((priority, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center justify-center text-sm font-bold mr-3">
+                          {idx + 1}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300">{priority}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Skills Analysis */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Matched Skills */}
+                {analysis.skillsMatch?.matchedSkills?.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <h4 className="font-bold text-gray-900 dark:text-white">
+                        Matched Skills
+                      </h4>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.skillsMatch.matchedSkills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Skills */}
+                {analysis.skillsMatch?.missingSkills?.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <AlertTriangle className="w-5 h-5 text-red-600" />
+                      <h4 className="font-bold text-gray-900 dark:text-white">
+                        Skills to Add
+                      </h4>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.skillsMatch.missingSkills.slice(0, 10).map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
 
-            {/* Right Content - Suggestions */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Skills Suggestions */}
-              <div className="card">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                    <Briefcase className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      Skills Suggestions
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Select relevant skills for your role
-                    </p>
-                  </div>
-                </div>
-
-                <SmartSuggestions
-                  type="skills"
-                  jobRole={jobRole}
-                  experienceLevel={experienceLevel}
-                  industry={industry}
-                  selectedItems={selectedSkills}
-                  onSelect={setSelectedSkills}
-                  maxSelections={15}
-                />
-              </div>
-
-              {/* Achievements Suggestions */}
-              <div className="card">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center">
-                    <Award className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      Achievement Suggestions
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Impactful statements to showcase your accomplishments
-                    </p>
-                  </div>
-                </div>
-
-                <SmartSuggestions
-                  type="achievements"
-                  jobRole={jobRole}
-                  experienceLevel={experienceLevel}
-                  industry={industry}
-                  selectedItems={selectedAchievements}
-                  onSelect={setSelectedAchievements}
-                  maxSelections={10}
-                />
-              </div>
-
-              {/* Selected Items Preview */}
-              {(selectedSkills.length > 0 || selectedAchievements.length > 0) && (
+              {/* Smart Enhancements */}
+              {analysis.smartEnhancements && (
                 <div className="card">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Your Selections
-                  </h3>
-
-                  {selectedSkills.length > 0 && (
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Zap className="w-6 h-6 text-purple-600" />
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Smart Enhancements
+                    </h3>
+                  </div>
+                  
+                  {/* Achievement Suggestions */}
+                  {analysis.smartEnhancements.achievementSuggestions?.length > 0 && (
                     <div className="mb-6">
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                        Skills ({selectedSkills.length})
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSkills.map((skill, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedAchievements.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                        Achievements ({selectedAchievements.length})
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                        Suggested Achievement Statements
                       </h4>
                       <ul className="space-y-2">
-                        {selectedAchievements.map((achievement, idx) => (
+                        {analysis.smartEnhancements.achievementSuggestions.slice(0, 5).map((achievement, idx) => (
                           <li key={idx} className="flex items-start">
-                            <ArrowRight className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
-                            <span className="text-gray-700 dark:text-gray-300 text-sm">
-                              {achievement}
-                            </span>
+                            <span className="text-purple-500 mr-2">•</span>
+                            <span className="text-gray-700 dark:text-gray-300 text-sm">{achievement}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
+
+                  {/* Action Verbs */}
+                  {analysis.smartEnhancements.actionVerbs?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                        Powerful Action Verbs to Use
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.smartEnhancements.actionVerbs.map((verb, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded text-sm font-medium"
+                          >
+                            {verb}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </section>
 

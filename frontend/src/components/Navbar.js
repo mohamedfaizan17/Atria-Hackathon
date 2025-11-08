@@ -102,9 +102,14 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="btn-primary">
-                Login
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link to="/admin/applications" className="btn-outline">
+                  Admin
+                </Link>
+                <Link to="/login" className="btn-primary">
+                  Login
+                </Link>
+              </div>
             )}
           </div>
 

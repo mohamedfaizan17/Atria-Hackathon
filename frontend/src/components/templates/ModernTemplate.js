@@ -109,7 +109,7 @@ const ModernTemplate = ({ data = {} }) => {
               Experience
             </h3>
             <div className="space-y-4">
-              {experience.map((exp, idx) => (
+              {(experience || []).map((exp, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between items-start mb-1">
                     <div>
@@ -119,7 +119,7 @@ const ModernTemplate = ({ data = {} }) => {
                     <span className="text-sm text-gray-500 whitespace-nowrap">{exp.period}</span>
                   </div>
                   <ul className="list-disc list-inside text-gray-700 space-y-1 ml-2">
-                    {exp.achievements.map((achievement, i) => (
+                    {(exp.achievements || []).map((achievement, i) => (
                       <li key={i} className="text-sm">{achievement}</li>
                     ))}
                   </ul>
@@ -134,7 +134,7 @@ const ModernTemplate = ({ data = {} }) => {
               <GraduationCap className="w-5 h-5 mr-2" />
               Education
             </h3>
-            {education.map((edu, idx) => (
+            {(education || []).map((edu, idx) => (
               <div key={idx} className="mb-3">
                 <div className="flex justify-between items-start">
                   <div>
@@ -158,11 +158,11 @@ const ModernTemplate = ({ data = {} }) => {
               Skills
             </h3>
             <div className="space-y-3">
-              {skills.map((skillGroup, idx) => (
+              {(skills || []).map((skillGroup, idx) => (
                 <div key={idx}>
                   <h4 className="font-semibold text-gray-800 text-sm mb-1">{skillGroup.category}</h4>
                   <div className="flex flex-wrap gap-1">
-                    {skillGroup.items.map((skill, i) => (
+                    {(skillGroup.items || []).map((skill, i) => (
                       <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                         {skill}
                       </span>
@@ -181,7 +181,7 @@ const ModernTemplate = ({ data = {} }) => {
                 Certifications
               </h3>
               <div className="space-y-2">
-                {certifications.map((cert, idx) => (
+                {(certifications || []).map((cert, idx) => (
                   <div key={idx}>
                     <h4 className="font-semibold text-gray-800 text-sm">{cert.name}</h4>
                     <p className="text-xs text-gray-600">{cert.issuer}</p>
